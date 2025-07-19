@@ -4,17 +4,13 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import Link from "next/link";
 
 interface Category {
   id: number;
   name: string;
   description: string;
 }
-
-const mockCategories: Category[] = [
-  { id: 1, name: "Work", description: "Emails from clients or team" },
-  { id: 2, name: "Newsletters", description: "Weekly and daily newsletters" },
-];
 
 export default function Home() {
   const [categories, setCategories] = useState<Category[]>([]);
@@ -24,41 +20,75 @@ export default function Home() {
   });
 
   useEffect(() => {
-    setCategories(mockCategories);
-    /*
-    fetch('/api/categories')
+    fetch("http://localhost:8000/api/categories/", {
+      credentials: "include",
+    })
       .then((res) => res.json())
-      .then(setCategories);
-    */
+      .then(setCategories)
+      .catch((err) => console.error("Erro ao buscar categorias", err));
   }, []);
 
   const addCategory = async () => {
-    const newCat: Category = { id: Date.now(), ...newCategory };
-    setCategories([...categories, newCat]);
-    setNewCategory({ name: "", description: "" });
+    const csrftoken = getCookie("csrftoken");
 
-    /*
-    const res = await fetch('/api/categories', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+    const res = await fetch("http://localhost:8000/api/categories/", {
+      method: "POST",
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+        ...(csrftoken && { "X-CSRFToken": csrftoken }),
+      },
       body: JSON.stringify(newCategory),
     });
-    const newCat = await res.json();
-    setCategories([...categories, newCat]);
-    setNewCategory({ name: '', description: '' });
-    */
+
+    if (res.ok) {
+      const created = await res.json();
+      setCategories([...categories, created]);
+      setNewCategory({ name: "", description: "" });
+    } else {
+      console.error("Erro ao criar categoria");
+    }
   };
 
-  const handleClick = () => {
-    // Redireciona para endpoint de login
-    window.location.href =
-      "http://localhost:8000/api/auth/login/google-oauth2/";
+  const getCookie = (name: string) => {
+    const cookieValue = document.cookie
+      .split("; ")
+      .find((row) => row.startsWith(name + "="))
+      ?.split("=")[1];
+    return cookieValue || null;
+  };
+
+  const handleClick = async () => {
+    try {
+      const res = await fetch("http://localhost:8000/api/auth/refresh-token/", {
+        credentials: "include", // para enviar cookies, se estiver usando sessão
+      });
+
+      if (!res.ok) {
+        throw new Error("Erro ao verificar refresh token");
+      }
+
+      const data = await res.json();
+      const hasRefreshToken = data.has_refresh_token;
+
+      const loginUrl = hasRefreshToken
+        ? "http://localhost:8000/api/auth/login/google-oauth2/"
+        : "http://localhost:8000/api/auth/login/google-oauth2/?prompt=consent&access_type=offline";
+
+      window.location.href = loginUrl;
+    } catch (err) {
+      console.error(err);
+      // Se quiser, pode ainda redirecionar ao login normal ou mostrar erro
+      window.location.href =
+        "http://localhost:8000/api/auth/login/google-oauth2/";
+    }
   };
 
   return (
     <main className="p-4 max-w-4xl mx-auto">
       <h1 className="text-3xl font-bold mb-4">AI Email Sorter</h1>
-
+      <Link href="/emails/list"> List emails </Link>
+      <Link href="/auth/success"> Connected accounts </Link>
       <section className="mb-6">
         <h2 className="text-xl font-semibold mb-2">Connect Gmail Account</h2>
         <Button onClick={() => (window.location.href = "/api/auth/google")}>
