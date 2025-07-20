@@ -3,18 +3,27 @@
 import React, { useEffect, useState } from "react";
 import FetchedEmailsCard from "../../components/FetchedEmailsCard";
 import { getCookie } from "@/app/utils/cookies";
-import router from "next/router";
 import Link from "next/link";
 
 type Email = {
   id: string;
   subject: string;
   body: string;
+  summary?: string;
+  received_at?: string;
+  hasReviewedByAI: boolean;
+};
+
+type Category = {
+  name: string;
+  description: string;
+  emails: Email[];
 };
 
 type AccountEmails = {
   email: string;
-  messages: Email[];
+  categories: Category[];
+  raw_emails: Email[];
 };
 
 export default function FetchedEmailsPage() {
@@ -22,38 +31,41 @@ export default function FetchedEmailsPage() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    const csrftoken = getCookie("csrftoken"); // usa a mesma função que você usa no logout
-
+    const csrftoken = getCookie("csrftoken");
     setLoading(true);
     fetch("http://localhost:8000/api/fetch-emails/", {
       method: "POST",
-      credentials: "include", // ESSENCIAL para enviar o cookie de sessão
+      credentials: "include",
       headers: {
         "Content-Type": "application/json",
-        ...(csrftoken && { "X-CSRFToken": csrftoken }), // ESSENCIAL para Django permitir o POST
+        ...(csrftoken && { "X-CSRFToken": csrftoken }),
       },
+      body: JSON.stringify({ limit: 5 }),
     })
       .then((res) => res.json())
-      .then((resJson) => setData(resJson.accounts || []))
+      .then((json) => setData(json.accounts || []))
       .finally(() => setLoading(false));
   }, []);
 
   return (
     <div className="max-w-4xl mx-auto p-6">
-      {" "}
-      <Link href="/"> Home </Link>
+      <Link href="/">← Home</Link>
       <h1 className="text-2xl font-bold mb-6">Fetched Emails</h1>
-      {loading ? (
-        <p>Carregando...</p>
-      ) : (
+
+      {loading && <p>Carregando e-mails...</p>}
+
+      {!loading &&
         data.map((account) => (
           <FetchedEmailsCard
             key={account.email}
             accountEmail={account.email}
-            messages={account.messages.slice(0, 5)} // só os 5 primeiros
+            categories={account.categories}
+            rawEmails={account.raw_emails}
+            selectedEmails={new Set()}              // placeholder até implementar seleção
+            toggleEmailSelection={() => {}}         // idem
+            selectAllEmails={() => {}}              // idem
           />
-        ))
-      )}
+        ))}
     </div>
   );
 }
