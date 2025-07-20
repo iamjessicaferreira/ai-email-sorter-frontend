@@ -1,4 +1,5 @@
 import React from "react";
+import { useDashboard } from "../utils/homeContext";
 
 interface Props {
   uid: string;
@@ -6,6 +7,8 @@ interface Props {
 }
 
 const DisconnectGoogleButton: React.FC<Props> = ({ uid, onSuccess }) => {
+  const { resetAccountState } = useDashboard();
+  
   function getCookie(name: string): string | undefined {
     const value = `; ${document.cookie}`;
     const parts = value.split(`; ${name}=`);
@@ -13,6 +16,7 @@ const DisconnectGoogleButton: React.FC<Props> = ({ uid, onSuccess }) => {
     return undefined;
   }
 
+  
   const handleDisconnect = async () => {
     const confirm = window.confirm(
       "Tem certeza que deseja desconectar esta conta Google?"
@@ -37,6 +41,7 @@ const DisconnectGoogleButton: React.FC<Props> = ({ uid, onSuccess }) => {
 
       if (response.ok) {
         alert("Conta desconectada com sucesso!");
+        resetAccountState(uid);
         onSuccess();
       } else {
         const error = await response.json();
