@@ -105,10 +105,10 @@ export default function DashboardPage() {
           `${backendUrl}/api/categories/`,
           {
             method: "POST",
-            credentials: "include",          // envia cookies de sessão
+            credentials: "include",          
             headers: {
               "Content-Type": "application/json",
-              "X-CSRFToken": csrftoken,      // header de CSRF
+              "X-CSRFToken": csrftoken,     
             },
           },
           handleUnauthorized
