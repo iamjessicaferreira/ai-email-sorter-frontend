@@ -8,6 +8,7 @@ import AccountsSection from "./components/sections/AccountSection";
 import EmailsSection from "./components/sections/EmailsSection";
 import { backendUrl, HomeContext } from "./utils/HomeContext";
 import { secureFetch } from "./utils/secureFetch";
+import { format } from "date-fns";
 
 type ApiCategory = { id: number; name: string; description: string };
 export type CardCategory = { name: string; description: string };
@@ -357,7 +358,7 @@ const addCategory = async () => {
           <>
             <h2 className="text-xl font-bold">{openedEmail.subject}</h2>
             <p className="text-xs text-gray-500">
-              {new Date(openedEmail.received_at).toLocaleString()}
+              {format(new Date(openedEmail.received_at), "dd/MM/yyyy HH:mm")}
             </p>
             <div className="mt-4 prose max-w-none" dangerouslySetInnerHTML={{ __html: openedEmail.body }} />
           </>
