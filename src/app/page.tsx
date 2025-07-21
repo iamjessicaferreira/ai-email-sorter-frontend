@@ -176,7 +176,7 @@ const addCategory = async () => {
   };
 
   const connectWebSocket = () => {
-    const sock = new WebSocket("ws://localhost:8000/ws/emails/");
+    const sock = new WebSocket(`ws://${backendUrl}/ws/emails/`);
     socketRef.current = sock;
     sock.onopen = () => {};
     sock.onmessage = (evt) => {
