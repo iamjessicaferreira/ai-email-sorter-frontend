@@ -176,7 +176,7 @@ const addCategory = async () => {
   };
 
   const connectWebSocket = () => {
-    const sock = new WebSocket(`ws://${backendUrl}/ws/emails/`);
+    const sock = new WebSocket(`${process.env.NEXT_PUBLIC_BACKEND_WS_URL}/ws/emails/`);
     socketRef.current = sock;
     sock.onopen = () => {};
     sock.onmessage = (evt) => {
