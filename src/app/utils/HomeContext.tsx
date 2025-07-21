@@ -1,6 +1,7 @@
 
-import React, { createContext, useContext } from "react";
+import { createContext, useContext } from "react";
 
+export const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
 
 export type HomeContextType = {
   resetAccountState: (uid: string) => void;

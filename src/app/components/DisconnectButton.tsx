@@ -1,5 +1,5 @@
 import React from "react";
-import { useDashboard } from "../utils/homeContext";
+import { backendUrl, useDashboard } from "../utils/HomeContext";
 
 interface Props {
   uid: string;
@@ -22,7 +22,7 @@ const DisconnectButton: React.FC<Props> = ({ uid, onSuccess }) => {
 
     const csrftoken = getCookie("csrftoken");
     try {
-      const response = await fetch("http://localhost:8000/api/auth/disconnect-google/", {
+      const response = await fetch( `${backendUrl}/api/auth/disconnect-google/`, {
         method: "POST",
         credentials: "include",
         headers: {
@@ -41,7 +41,7 @@ const DisconnectButton: React.FC<Props> = ({ uid, onSuccess }) => {
         alert("Error: " + (error.error || "Unknown error"));
       }
     } catch (err) {
-      alert("Failed to disconnect the account.");
+      alert(`${err}, Failed to disconnect the account.`);
     }
   };
 

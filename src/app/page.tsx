@@ -6,7 +6,7 @@ import Modal from "./components/Modal";
 import ConnectSection from "./components/sections/ConnectSection";
 import AccountsSection from "./components/sections/AccountSection";
 import EmailsSection from "./components/sections/EmailsSection";
-import { HomeContext } from "./utils/homeContext";
+import { backendUrl, HomeContext } from "./utils/HomeContext";
 import { secureFetch } from "./utils/secureFetch";
 
 type ApiCategory = { id: number; name: string; description: string };
@@ -37,7 +37,6 @@ export default function DashboardPage() {
   const [loadingEmail, setLoadingEmail] = useState(false);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
   const socketRef = useRef<WebSocket | null>(null);
-
 
   const resetAppState = useCallback(() => {
     setAccounts([]);
@@ -79,7 +78,7 @@ export default function DashboardPage() {
       setOpenedEmailId(null);
     }
     setTimeout(() => {
-      localStorage.setItem("byAccount", JSON.stringify((prev: any) => {
+      localStorage.setItem("byAccount", JSON.stringify((prev: Record<string, Incoming[]>) => {
         const next = { ...prev };
         delete next[uid];
         return next;
@@ -101,7 +100,7 @@ export default function DashboardPage() {
 
       useEffect(() => {
         secureFetch(
-          "http://localhost:8000/api/categories/",
+          `${backendUrl}/api/categories/`,
           {},
           handleUnauthorized
         )
@@ -115,7 +114,7 @@ const addCategory = async () => {
   const csrftoken = getCookie("csrftoken");
   try {
     const res = await secureFetch(
-      "http://localhost:8000/api/categories/",
+      `${backendUrl}/api/categories/`,
       {
         method: "POST",
         headers: {
@@ -130,7 +129,7 @@ const addCategory = async () => {
     setApiCategories((prev) => [...prev, data]);
     setNewCategory({ name: "", description: "" });
   } catch (e) {
-    addToast("Erro ao adicionar categoria.");
+    addToast(`Erro ao adicionar categoria. ${e}`);
   }
 };
 
@@ -140,7 +139,7 @@ const addCategory = async () => {
     setLoadingAccounts(true);
     try {
       const res = await secureFetch(
-        "http://localhost:8000/api/auth/success/",
+        `${backendUrl}/api/auth/success/`,
         {},
         handleUnauthorized
       );
@@ -164,15 +163,15 @@ const addCategory = async () => {
 
   const handleAddAccount = async () => {
     try {
-      const res = await fetch("http://localhost:8000/api/auth/refresh-token/", { credentials: "include" });
+      const res = await fetch( `${backendUrl}/api/auth/refresh-token/`, { credentials: "include" });
       if (!res.ok) throw new Error();
       const { has_refresh_token } = await res.json();
       const loginUrl = has_refresh_token
-        ? "http://localhost:8000/api/auth/login/google-oauth2/"
-        : "http://localhost:8000/api/auth/login/google-oauth2/?prompt=consent&access_type=offline";
+        ?  `${backendUrl}/api/auth/login/google-oauth2/`
+        :  `${backendUrl}/api/auth/login/google-oauth2/?prompt=consent&access_type=offline`;
       window.location.href = loginUrl;
     } catch {
-      window.location.href = "http://localhost:8000/api/auth/login/google-oauth2/";
+      window.location.href =  `${backendUrl}/api/auth/login/google-oauth2/`;
     }
   };
 
@@ -227,8 +226,8 @@ const addCategory = async () => {
     const csrftoken = getCookie("csrftoken");
     const endpoint =
       action === "delete"
-        ? "http://localhost:8000/api/delete-emails/"
-        : "http://localhost:8000/api/unsubscribe-emails/";
+        ?  `${backendUrl}/api/delete-emails/`
+        :  `${backendUrl}/api/unsubscribe-emails/`;
 
     const res = await secureFetch(endpoint, {
       method: "POST",
@@ -245,21 +244,19 @@ const addCategory = async () => {
 
     const data = await res.json();
     if (action === "unsubscribe") {
-      if (action === "unsubscribe") {
-        if (Array.isArray(data.failures) && data.failures.length) {
-          data.failures.forEach((failure: { subject?: string; id: string; error: string }) => {
-            const display = failure.subject || failure.id;
-            addToast(`"${display}": ${failure.error}`);
-          });
-        }
-        if (Array.isArray(data.success_ids) && data.success_ids.length) {
-          setUnsubscribedEmails((prev) => {
-            const next = new Set(prev);
-            data.success_ids.forEach((id: string) => next.add(id));
-            return next;
-          });
-          addToast(`Unsubscribed from ${data.success_ids.length} emails.`);
-        }
+      if (Array.isArray(data.failures) && data.failures.length) {
+        data.failures.forEach((failure: { subject?: string; id: string; error: string }) => {
+          const display = failure.subject || failure.id;
+          addToast(`"${display}": ${failure.error}`);
+        });
+      }
+      if (Array.isArray(data.success_ids) && data.success_ids.length) {
+        setUnsubscribedEmails((prev) => {
+          const next = new Set(prev);
+          data.success_ids.forEach((id: string) => next.add(id));
+          return next;
+        });
+        addToast(`Unsubscribed from ${data.success_ids.length} emails.`);
       }
     } else {
       if (Array.isArray(data.successes) && data.successes.length) {
@@ -286,7 +283,7 @@ const addCategory = async () => {
     setLoadingEmail(true);
     try {
       const res = await secureFetch(
-        `http://localhost:8000/api/emails/${id}/`,
+         `${backendUrl}/api/emails/${id}/`,
         {},
         handleUnauthorized
       );
