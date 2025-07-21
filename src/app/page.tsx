@@ -100,9 +100,17 @@ export default function DashboardPage() {
       ?.split("=")[1] || "";
 
       useEffect(() => {
+        const csrftoken = getCookie("csrftoken");
         secureFetch(
           `${backendUrl}/api/categories/`,
-          {},
+          {
+            method: "POST",
+            credentials: "include",          // envia cookies de sessão
+            headers: {
+              "Content-Type": "application/json",
+              "X-CSRFToken": csrftoken,      // header de CSRF
+            },
+          },
           handleUnauthorized
         )
           .then((r) => r.json())
