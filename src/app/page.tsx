@@ -137,11 +137,15 @@ const addCategory = async () => {
 
 
   const fetchAccounts = useCallback(async () => {
+    const csrftoken = getCookie("csrftoken");
     setLoadingAccounts(true);
     try {
       const res = await secureFetch(
         `${backendUrl}/api/auth/success/`,
-        {},
+        {
+          credentials: "include",
+          headers: { "Content-Type": "application/json", "X-CSRFToken": csrftoken },
+        },
         handleUnauthorized
       );
       const data = await res.json();
