@@ -1,4 +1,3 @@
-// components/FetchedEmailsCard.tsx
 import React, { useState } from "react";
 
 type Email = {
@@ -7,7 +6,7 @@ type Email = {
   body: string;
   summary?: string;
   received_at?: string;
-  category: string;      // incluímos a categoria aqui
+  category: string;
 };
 
 type Category = {
@@ -31,20 +30,17 @@ export default function FetchedEmailsCard({
   categories,
   rawEmails,
   selectedEmails,
-  toggleEmailSelection,
   unsubscribedEmails,
+  toggleEmailSelection,
   selectAllEmails,
   onEmailClick,
 }: Props) {
   const [openCat, setOpenCat] = useState<string | null>(null);
   const [openRaw, setOpenRaw] = useState(false);
 
-  // todos os IDs: por categoria + sem categoria
   const allIds = [
     ...categories.flatMap((cat) =>
-      rawEmails
-        .filter((e) => e.category === cat.name)
-        .map((e) => e.id)
+      rawEmails.filter((e) => e.category === cat.name).map((e) => e.id)
     ),
     ...rawEmails
       .filter((e) => !categories.some((c) => c.name === e.category))
@@ -56,7 +52,7 @@ export default function FetchedEmailsCard({
     <div className="border rounded-xl p-4 shadow bg-white mb-6">
       <h2 className="text-xl font-bold mb-3">{accountEmail}</h2>
 
-      {(allIds.length > 0) && (
+      {allIds.length > 0 && (
         <label className="inline-flex items-center mb-2">
           <input
             type="checkbox"
@@ -64,83 +60,87 @@ export default function FetchedEmailsCard({
             onChange={(e) => selectAllEmails(e.target.checked)}
             className="mr-2"
           />
-          <span className="font-semibold">Selecionar todos da conta</span>
+          <span className="font-semibold">Select all from account</span>
         </label>
       )}
 
       {categories.map((cat) => {
-        const emailsForCat = rawEmails.filter(
-          (e) => e.category === cat.name
-        );
+        const emailsForCat = rawEmails.filter((e) => e.category === cat.name);
 
         return (
           <div key={cat.name} className="border rounded-md mb-4">
             <button
               className="w-full px-4 py-2 bg-gray-100 hover:bg-gray-200 flex justify-between"
-              onClick={() =>
-                setOpenCat(openCat === cat.name ? null : cat.name)
-              }
+              onClick={() => setOpenCat(openCat === cat.name ? null : cat.name)}
             >
               <span className="font-semibold">{cat.name}</span>
               <span>{openCat === cat.name ? "▲" : "▼"}</span>
             </button>
             {openCat === cat.name && (
-              <ul className="p-4 space-y-3 max-h-64 overflow-y-auto">
-                {emailsForCat.length === 0 ? (
-                  <p className="text-gray-500">
-                    Nenhum e-mail nesta categoria.
+              <div>
+                {cat.description && (
+                  <p className="text-m text-gray-600 mt-2 mb-2 px-4">
+                    {cat.description}
                   </p>
-                ) : (
-                  emailsForCat.map((e) => (
-                    <li
+                )}
+                <ul className="p-4 space-y-3 max-h-64 overflow-y-auto">
+                  {emailsForCat.length === 0 ? (
+                    <p className="text-gray-500">No emails in this category.</p>
+                  ) : (
+                    emailsForCat.map((e) => (
+                      <li
                         key={e.id}
                         className="p-3 border rounded-md bg-gray-50 flex flex-col cursor-pointer hover:bg-gray-100"
                       >
-                      <label className="inline-flex items-center mb-1">
-                        <input
-                          type="checkbox"
-                          checked={selectedEmails.has(e.id)}
-                          onChange={(ev) => {ev.stopPropagation()
-                             toggleEmailSelection(e.id)}}
-                          className="mr-2"
-                        />
-                        <h3 className="font-semibold flex items-center">
-                          {e.subject}
-                          {unsubscribedEmails.has(e.id) && (
-                            <span className="italic text-xs text-gray-500 ml-2">unsubscribed</span>
-                          )}
-                        </h3>
-
-                      </label>
-                      { e.summary && (
-                        <p onClick={() => onEmailClick(e.id)}  className="italic text-sm mb-1">{e.summary}</p>
-                      )}
-                      {/* <div
-                        className="text-sm text-gray-700"
-                        dangerouslySetInnerHTML={{ __html: e.body }}
-                      /> */}
-                      {e.received_at && (
-                        <p className="text-xs text-gray-400 mt-1">
-                          {new Date(e.received_at).toLocaleString()}
-                        </p>
-                      )}
-                    </li>
-                  ))
-                )}
-              </ul>
+                        <label className="inline-flex items-center mb-1">
+                          <input
+                            type="checkbox"
+                            checked={selectedEmails.has(e.id)}
+                            onChange={(ev) => {
+                              ev.stopPropagation();
+                              toggleEmailSelection(e.id);
+                            }}
+                            className="mr-2"
+                          />
+                          <h3 className="font-semibold flex items-center">
+                            {e.subject}
+                            {unsubscribedEmails.has(e.id) && (
+                              <span className="italic text-xs text-gray-500 ml-2">
+                                unsubscribed
+                              </span>
+                            )}
+                          </h3>
+                        </label>
+                        {e.summary && (
+                          <p
+                            onClick={() => onEmailClick(e.id)}
+                            className="italic text-sm mb-1 cursor-pointer hover:underline"
+                          >
+                            {e.summary}
+                          </p>
+                        )}
+                        {e.received_at && (
+                          <p className="text-xs text-gray-400 mt-1">
+                            {new Date(e.received_at).toLocaleString()}
+                          </p>
+                        )}
+                      </li>
+                    ))
+                  )}
+                </ul>
+              </div>
             )}
           </div>
         );
       })}
 
-      {/* E‑mails sem categoria */}
       {rawEmails.some((e) => !categories.some((c) => c.name === e.category)) && (
         <div className="border rounded-md">
           <button
             className="w-full px-4 py-2 bg-gray-100 hover:bg-gray-200 flex justify-between"
             onClick={() => setOpenRaw(!openRaw)}
           >
-            <span className="font-semibold">E-mails sem categoria</span>
+            <span className="font-semibold">Uncategorized emails</span>
             <span>{openRaw ? "▲" : "▼"}</span>
           </button>
           {openRaw && (

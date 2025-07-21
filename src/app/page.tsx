@@ -1,14 +1,12 @@
-// app/dashboard/page.tsx
 "use client";
 
-import React, { useEffect, useRef, useState, useCallback, createContext, useContext } from "react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
 import Toast from "./components/Toast";
 import Modal from "./components/Modal";
 import ConnectSection from "./components/sections/ConnectSection";
 import AccountsSection from "./components/sections/AccountSection";
 import EmailsSection from "./components/sections/EmailsSection";
 import { HomeContext } from "./utils/homeContext";
-
 
 type ApiCategory = { id: number; name: string; description: string };
 type CardCategory = { name: string; description: string };
@@ -25,9 +23,8 @@ type Incoming = {
 type ToastMessage = { id: string; text: string };
 
 export default function DashboardPage() {
-  // --- state & refs ---
   const [apiCategories, setApiCategories] = useState<ApiCategory[]>([]);
-  const [newCat, setNewCat] = useState<Omit<ApiCategory, "id">>({ name: "", description: "" });
+  const [newCategory, setNewCategory] = useState<Omit<ApiCategory, "id">>({ name: "", description: "" });
   const [accounts, setAccounts] = useState<GmailAccount[]>([]);
   const [loadingAccounts, setLoadingAccounts] = useState(true);
   const [byAccount, setByAccount] = useState<Record<string, Incoming[]>>({});
@@ -39,7 +36,6 @@ export default function DashboardPage() {
   const [loadingEmail, setLoadingEmail] = useState(false);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
   const socketRef = useRef<WebSocket | null>(null);
-  
 
   const resetAccountState = (uid: string) => {
     setAccounts((prev) => prev.filter((a) => a.uid !== uid));
@@ -49,27 +45,23 @@ export default function DashboardPage() {
       return next;
     });
     setSelectedEmails((prev) => {
-      // Remove seleções de emails desse uid
       const allIds = byAccount[uid]?.map(e => e.id) || [];
-      const nxt = new Set(prev);
-      allIds.forEach(id => nxt.delete(id));
-      return nxt;
+      const next = new Set(prev);
+      allIds.forEach(id => next.delete(id));
+      return next;
     });
     setUnsubscribedEmails((prev) => {
       const allIds = byAccount[uid]?.map(e => e.id) || [];
-      const nxt = new Set(prev);
-      allIds.forEach(id => nxt.delete(id));
-      return nxt;
+      const next = new Set(prev);
+      allIds.forEach(id => next.delete(id));
+      return next;
     });
-    // Se o email aberto for dessa conta, feche:
     if (openedEmail && openedEmail.account === uid) {
       setOpenedEmail(null);
       setOpenedEmailId(null);
     }
-    // Atualize o localStorage:
     setTimeout(() => {
-      // Espera o próximo ciclo do React
-      localStorage.setItem("byAccount", JSON.stringify((prev) => {
+      localStorage.setItem("byAccount", JSON.stringify((prev: any) => {
         const next = { ...prev };
         delete next[uid];
         return next;
@@ -79,8 +71,8 @@ export default function DashboardPage() {
 
   const addToast = (text: string) => {
     const id = Math.random().toString(36).slice(2);
-    setToasts((t) => [...t, { id, text }]);
-    setTimeout(() => setToasts((t) => t.filter((x) => x.id !== id)), 4000);
+    setToasts((toasts) => [...toasts, { id, text }]);
+    setTimeout(() => setToasts((toasts) => toasts.filter((t) => t.id !== id)), 4000);
   };
 
   const getCookie = (name: string) =>
@@ -89,7 +81,6 @@ export default function DashboardPage() {
       .find((row) => row.startsWith(name + "="))
       ?.split("=")[1] || "";
 
-  // 1) Fetch categories
   useEffect(() => {
     fetch("http://localhost:8000/api/categories/", { credentials: "include" })
       .then((r) => r.json())
@@ -103,16 +94,15 @@ export default function DashboardPage() {
       method: "POST",
       credentials: "include",
       headers: { "Content-Type": "application/json", "X-CSRFToken": csrftoken },
-      body: JSON.stringify(newCat),
+      body: JSON.stringify(newCategory),
     });
     if (res.ok) {
       const created: ApiCategory = await res.json();
-      setApiCategories((old) => [...old, created]);
-      setNewCat({ name: "", description: "" });
+      setApiCategories((prev) => [...prev, created]);
+      setNewCategory({ name: "", description: "" });
     }
   };
 
-  // 2) Fetch accounts
   const fetchAccounts = useCallback(async () => {
     setLoadingAccounts(true);
     try {
@@ -129,7 +119,6 @@ export default function DashboardPage() {
     fetchAccounts();
   }, [fetchAccounts]);
 
-  // 3) OAuth flow
   const handleAddAccount = async () => {
     try {
       const res = await fetch("http://localhost:8000/api/auth/refresh-token/", { credentials: "include" });
@@ -144,17 +133,15 @@ export default function DashboardPage() {
     }
   };
 
-  // 4) WebSocket for incoming emails
   const connectWebSocket = () => {
     const sock = new WebSocket("ws://localhost:8000/ws/emails/");
     socketRef.current = sock;
-    sock.onopen = () => console.log("WS connected");
+    sock.onopen = () => {};
     sock.onmessage = (evt) => {
       const msg: Incoming = JSON.parse(evt.data);
       setByAccount((prev) => ({ ...prev, [msg.account]: [msg, ...(prev[msg.account] || [])] }));
     };
     sock.onclose = () => {
-      console.log("WS closed, retry in 1s");
       setTimeout(connectWebSocket, 1000);
     };
   };
@@ -174,24 +161,23 @@ export default function DashboardPage() {
     localStorage.setItem("byAccount", JSON.stringify(byAccount));
   }, [byAccount]);
 
-  // 5) Bulk actions
   const toggleEmailSelection = (id: string) =>
     setSelectedEmails((prev) => {
-      const nxt = new Set(prev);
-      nxt.has(id) ? nxt.delete(id) : nxt.add(id);
-      return nxt;
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
     });
 
-  const selectAllInAccount = (acc: string, sel: boolean) =>
+  const selectAllInAccount = (acc: string, selectAll: boolean) =>
     setSelectedEmails((prev) => {
-      const nxt = new Set(prev);
-      (byAccount[acc] || []).forEach((e) => (sel ? nxt.add(e.id) : nxt.delete(e.id)));
-      return nxt;
+      const next = new Set(prev);
+      (byAccount[acc] || []).forEach((e) => (selectAll ? next.add(e.id) : next.delete(e.id)));
+      return next;
     });
 
   const applyBulk = async () => {
     if (!selectedEmails.size) {
-      addToast("Selecione pelo menos um e‑mail.");
+      addToast("Select at least one email.");
       return;
     }
 
@@ -210,26 +196,23 @@ export default function DashboardPage() {
 
     if (!res.ok && res.status !== 207) {
       const text = await res.text();
-      addToast(`Erro ${res.status}: ${text}`);
+      addToast(`Error ${res.status}: ${text}`);
       return;
     }
 
-
-    const data = (await res.json()) as any;
-    console.log(data, "data")
+    const data = await res.json();
     if (action === "unsubscribe") {
       if (Array.isArray(data.not_found) && data.not_found.length) {
-        addToast(`Nenhum link encontrado em ${data.not_found.length} e‑mails.`);
+        addToast(`No unsubscribe link found in ${data.not_found.length} emails.`);
       }
       if (Array.isArray(data.success_ids) && data.success_ids.length) {
         setUnsubscribedEmails((prev) => {
-          const nxt = new Set(prev);
-          data.success_ids.forEach((id: string) => nxt.add(id));
-          return nxt;
+          const next = new Set(prev);
+          data.success_ids.forEach((id: string) => next.add(id));
+          return next;
         });
-        addToast(`Unsubscribed em ${data.success_ids.length} e‑mails.`);
+        addToast(`Unsubscribed from ${data.success_ids.length} emails.`);
       }
-      
     } else {
       if (Array.isArray(data.successes) && data.successes.length) {
         setByAccount((prev) => {
@@ -238,20 +221,18 @@ export default function DashboardPage() {
           for (const [acct, msgs] of Object.entries(prev)) {
             next[acct] = msgs.filter((m) => !toRemove.has(m.id));
           }
-          console.log('byAccount after delete:', next);
           return next;
         });
-        addToast(`Deletados ${data.successes.length} e‑mails.`);
+        addToast(`Deleted ${data.successes.length} emails.`);
       }
       if (Array.isArray(data.failures) && data.failures.length) {
-        addToast(`${data.failures.length} falhas ao deletar.`);
+        addToast(`${data.failures.length} failures while deleting.`);
       }
     }
 
     setSelectedEmails(new Set());
   };
 
-  // 6) Open full email in modal
   const openEmail = async (id: string) => {
     setOpenedEmailId(id);
     setLoadingEmail(true);
@@ -259,26 +240,24 @@ export default function DashboardPage() {
     if (res.ok) {
       setOpenedEmail(await res.json());
     } else {
-      addToast("Erro ao carregar e‑mail.");
+      addToast("Error loading email.");
     }
     setLoadingEmail(false);
   };
 
-  // Prepare card categories
   const cardCategories: CardCategory[] = apiCategories.map((c) => ({
     name: c.name,
     description: c.description,
   }));
 
   return (
-    <>
-      <HomeContext.Provider  value={{ resetAccountState }}>
-              <main className="p-6 max-w-4xl mx-auto space-y-8">
+    <HomeContext.Provider value={{ resetAccountState }}>
+      <main className="p-6 max-w-4xl mx-auto space-y-8">
         <h1 className="text-3xl font-bold">AI Email Sorter</h1>
 
         <ConnectSection
-          newCat={newCat}
-          setNewCat={setNewCat}
+          newCategory={newCategory}
+          setNewCategory={setNewCategory}
           addCategory={addCategory}
           handleAddAccount={handleAddAccount}
         />
@@ -299,10 +278,9 @@ export default function DashboardPage() {
           onToggleSelect={toggleEmailSelection}
           onSelectAll={selectAllInAccount}
           onEmailClick={openEmail}
-          onActionChange={setAction} 
+          onActionChange={setAction}
         />
 
-        {/* Toasters */}
         <div className="fixed top-4 right-4 space-y-2 z-50">
           {toasts.map((t) => (
             <Toast key={t.id} message={t.text} onDone={() => setToasts((all) => all.filter((x) => x.id !== t.id))} />
@@ -310,7 +288,6 @@ export default function DashboardPage() {
         </div>
       </main>
 
-      {/* Full-email Modal */}
       <Modal
         isOpen={!!openedEmailId}
         onClose={() => {
@@ -319,7 +296,7 @@ export default function DashboardPage() {
         }}
       >
         {loadingEmail ? (
-          <p>Carregando...</p>
+          <p>Loading...</p>
         ) : openedEmail ? (
           <>
             <h2 className="text-xl font-bold">{openedEmail.subject}</h2>
@@ -329,11 +306,9 @@ export default function DashboardPage() {
             <div className="mt-4 prose max-w-none" dangerouslySetInnerHTML={{ __html: openedEmail.body }} />
           </>
         ) : (
-          <p>Não foi possível carregar o e‑mail.</p>
+          <p>Could not load email.</p>
         )}
       </Modal>
-      </HomeContext.Provider>
-
-    </>
+    </HomeContext.Provider>
   );
 }
