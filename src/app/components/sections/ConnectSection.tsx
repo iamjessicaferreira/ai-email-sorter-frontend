@@ -3,6 +3,7 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { CardCategory } from "@/app/page";
 
 type Props = {
   newCategory: { name: string; description: string };
@@ -11,12 +12,14 @@ type Props = {
   >;
   addCategory: () => Promise<void>;
   handleAddAccount: () => Promise<void>;
+  cardCategories: CardCategory[];
 };
 
 export default function ConnectSection({
   newCategory,
   setNewCategory,
   addCategory,
+  cardCategories,
   handleAddAccount,
 }: Props) {
   return (
@@ -42,6 +45,23 @@ export default function ConnectSection({
         />
         <Button onClick={addCategory}>Add</Button>
       </div>
+
+
+      {cardCategories?.length > 0 && (
+            <div>
+              <h3 className="text-lg font-semibold mt-2">My categories</h3>
+              <ul>
+                {cardCategories.map((c: CardCategory) => (
+                  <li key={c.name}>
+                    <span className="font-bold">{c.name}</span>
+                    {c.description && (
+                      <span className="ml-2 text-gray-500 text-sm">{c.description}</span>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
     </section>
   );
 }

@@ -7,9 +7,10 @@ import ConnectSection from "./components/sections/ConnectSection";
 import AccountsSection from "./components/sections/AccountSection";
 import EmailsSection from "./components/sections/EmailsSection";
 import { HomeContext } from "./utils/homeContext";
+import { secureFetch } from "./utils/secureFetch";
 
 type ApiCategory = { id: number; name: string; description: string };
-type CardCategory = { name: string; description: string };
+export type CardCategory = { name: string; description: string };
 type GmailAccount = { uid: string; email: string | null };
 type Incoming = {
   account: string;
@@ -36,6 +37,23 @@ export default function DashboardPage() {
   const [loadingEmail, setLoadingEmail] = useState(false);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
   const socketRef = useRef<WebSocket | null>(null);
+
+
+  const resetAppState = useCallback(() => {
+    setAccounts([]);
+    setByAccount({});
+    setSelectedEmails(new Set());
+    setUnsubscribedEmails(new Set());
+    setOpenedEmailId(null);
+    setOpenedEmail(null);
+    setApiCategories([]);
+    localStorage.removeItem("byAccount");
+  }, []);
+
+ const handleUnauthorized = useCallback(() => {
+    resetAppState();
+    addToast("Sua sessão expirou. Faça login novamente.");
+  }, [resetAppState]);
 
   const resetAccountState = (uid: string) => {
     setAccounts((prev) => prev.filter((a) => a.uid !== uid));
@@ -81,39 +99,64 @@ export default function DashboardPage() {
       .find((row) => row.startsWith(name + "="))
       ?.split("=")[1] || "";
 
-  useEffect(() => {
-    fetch("http://localhost:8000/api/categories/", { credentials: "include" })
-      .then((r) => r.json())
-      .then(setApiCategories)
-      .catch(console.error);
-  }, []);
+      useEffect(() => {
+        secureFetch(
+          "http://localhost:8000/api/categories/",
+          {},
+          handleUnauthorized
+        )
+          .then((r) => r.json())
+          .then(setApiCategories)
+          .catch(() => setApiCategories([]));
+      
+  }, [handleUnauthorized]);
 
-  const addCategory = async () => {
-    const csrftoken = getCookie("csrftoken");
-    const res = await fetch("http://localhost:8000/api/categories/", {
-      method: "POST",
-      credentials: "include",
-      headers: { "Content-Type": "application/json", "X-CSRFToken": csrftoken },
-      body: JSON.stringify(newCategory),
-    });
-    if (res.ok) {
-      const created: ApiCategory = await res.json();
-      setApiCategories((prev) => [...prev, created]);
-      setNewCategory({ name: "", description: "" });
-    }
-  };
+const addCategory = async () => {
+  const csrftoken = getCookie("csrftoken");
+  try {
+    const res = await secureFetch(
+      "http://localhost:8000/api/categories/",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRFToken": csrftoken,
+        },
+        body: JSON.stringify(newCategory),
+      },
+      handleUnauthorized
+    );
+    const data = await res.json();
+    setApiCategories((prev) => [...prev, data]);
+    setNewCategory({ name: "", description: "" });
+  } catch (e) {
+    addToast("Erro ao adicionar categoria.");
+  }
+};
+
+
 
   const fetchAccounts = useCallback(async () => {
     setLoadingAccounts(true);
     try {
-      const res = await fetch("http://localhost:8000/api/auth/success/", { credentials: "include" });
-      setAccounts(await res.json());
+      const res = await secureFetch(
+        "http://localhost:8000/api/auth/success/",
+        {},
+        handleUnauthorized
+      );
+      const data = await res.json();
+      if (Array.isArray(data) && data.length > 0) {
+        setAccounts(data);
+      } else {
+        resetAppState();
+      }
     } catch {
-      setAccounts([]);
+      resetAppState();
     } finally {
       setLoadingAccounts(false);
     }
-  }, []);
+  }, [handleUnauthorized, resetAppState]);
+  
 
   useEffect(() => {
     fetchAccounts();
@@ -187,12 +230,12 @@ export default function DashboardPage() {
         ? "http://localhost:8000/api/delete-emails/"
         : "http://localhost:8000/api/unsubscribe-emails/";
 
-    const res = await fetch(endpoint, {
+    const res = await secureFetch(endpoint, {
       method: "POST",
       credentials: "include",
       headers: { "Content-Type": "application/json", "X-CSRFToken": csrftoken },
       body: JSON.stringify({ email_ids: Array.from(selectedEmails) }),
-    });
+    }, handleUnauthorized);
 
     if (!res.ok && res.status !== 207) {
       const text = await res.text();
@@ -202,16 +245,21 @@ export default function DashboardPage() {
 
     const data = await res.json();
     if (action === "unsubscribe") {
-      if (Array.isArray(data.not_found) && data.not_found.length) {
-        addToast(`No unsubscribe link found in ${data.not_found.length} emails.`);
-      }
-      if (Array.isArray(data.success_ids) && data.success_ids.length) {
-        setUnsubscribedEmails((prev) => {
-          const next = new Set(prev);
-          data.success_ids.forEach((id: string) => next.add(id));
-          return next;
-        });
-        addToast(`Unsubscribed from ${data.success_ids.length} emails.`);
+      if (action === "unsubscribe") {
+        if (Array.isArray(data.failures) && data.failures.length) {
+          data.failures.forEach((failure: { subject?: string; id: string; error: string }) => {
+            const display = failure.subject || failure.id;
+            addToast(`"${display}": ${failure.error}`);
+          });
+        }
+        if (Array.isArray(data.success_ids) && data.success_ids.length) {
+          setUnsubscribedEmails((prev) => {
+            const next = new Set(prev);
+            data.success_ids.forEach((id: string) => next.add(id));
+            return next;
+          });
+          addToast(`Unsubscribed from ${data.success_ids.length} emails.`);
+        }
       }
     } else {
       if (Array.isArray(data.successes) && data.successes.length) {
@@ -236,26 +284,37 @@ export default function DashboardPage() {
   const openEmail = async (id: string) => {
     setOpenedEmailId(id);
     setLoadingEmail(true);
-    const res = await fetch(`http://localhost:8000/api/emails/${id}/`, { credentials: "include" });
-    if (res.ok) {
-      setOpenedEmail(await res.json());
-    } else {
+    try {
+      const res = await secureFetch(
+        `http://localhost:8000/api/emails/${id}/`,
+        {},
+        handleUnauthorized
+      );
+      if (res.ok) {
+        setOpenedEmail(await res.json());
+      } else {
+        addToast("Error loading email.");
+      }
+    } catch {
       addToast("Error loading email.");
     }
     setLoadingEmail(false);
   };
 
-  const cardCategories: CardCategory[] = apiCategories.map((c) => ({
-    name: c.name,
-    description: c.description,
-  }));
+  const cardCategories: CardCategory[] = Array.isArray(apiCategories)
+  ? apiCategories.map((c) => ({
+      name: c.name,
+      description: c.description,
+    }))
+  : [];
 
   return (
-    <HomeContext.Provider value={{ resetAccountState }}>
+    <HomeContext.Provider value={{ resetAccountState, resetAppState }}>
       <main className="p-6 max-w-4xl mx-auto space-y-8">
         <h1 className="text-3xl font-bold">AI Email Sorter</h1>
 
         <ConnectSection
+          cardCategories={cardCategories}
           newCategory={newCategory}
           setNewCategory={setNewCategory}
           addCategory={addCategory}

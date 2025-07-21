@@ -1,6 +1,3 @@
-"use client";
-
-import React from "react";
 import FetchedEmailsCard from "../FetchedEmailsCard";
 
 type CardCategory = { name: string; description: string };
@@ -59,6 +56,8 @@ export default function EmailsSection({
           Apply
         </button>
       </div>
+
+
       {Object.keys(byAccount).length === 0 ? (
         <p>Your new messages will appear here.</p>
       ) : (
