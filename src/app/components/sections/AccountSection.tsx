@@ -1,4 +1,3 @@
-// app/dashboard/components/AccountsSection.tsx
 "use client";
 
 import React from "react";
@@ -12,18 +11,14 @@ type Props = {
   onRefresh: () => void;
 };
 
-export default function AccountsSection({
-  accounts,
-  loading,
-  onRefresh,
-}: Props) {
+export default function AccountsSection({ accounts, loading, onRefresh }: Props) {
   return (
     <section className="space-y-2">
-      <h2 className="text-xl font-semibold">Contas Ativas</h2>
+      <h2 className="text-xl font-semibold">Active Accounts</h2>
       {loading ? (
-        <p>Carregando...</p>
+        <p>Loading...</p>
       ) : accounts.length === 0 ? (
-        <p>Nenhuma conta conectada.</p>
+        <p>No accounts connected.</p>
       ) : (
         <ul className="space-y-1">
           {accounts.map((acc) => (

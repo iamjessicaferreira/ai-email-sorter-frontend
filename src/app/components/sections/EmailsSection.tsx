@@ -1,4 +1,3 @@
-// app/dashboard/components/EmailsSection.tsx
 "use client";
 
 import React from "react";
@@ -38,18 +37,18 @@ export default function EmailsSection({
   onToggleSelect,
   onSelectAll,
   onEmailClick,
-  onActionChange
+  onActionChange,
 }: Props) {
   return (
     <section className="space-y-4">
-      <h2 className="text-xl font-semibold">Novos E-mails</h2>
+      <h2 className="text-xl font-semibold">New Emails</h2>
       <div className="flex items-center gap-2">
         <select
           value={action}
           onChange={e => onActionChange(e.target.value as "delete" | "unsubscribe")}
           className="border rounded px-2 py-1"
         >
-          <option value="delete">Apagar</option>
+          <option value="delete">Delete</option>
           <option value="unsubscribe">Unsubscribe</option>
         </select>
         <button
@@ -57,22 +56,21 @@ export default function EmailsSection({
           disabled={!selectedEmails.size}
           className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
         >
-          Aplicar
+          Apply
         </button>
       </div>
-
       {Object.keys(byAccount).length === 0 ? (
-        <p>Suas novas mensagens vão aparecer aqui.</p>
+        <p>Your new messages will appear here.</p>
       ) : (
-        Object.entries(byAccount).map(([accountEmail, msgs]) => (
+        Object.entries(byAccount).map(([accountEmail, emails]) => (
           <FetchedEmailsCard
             key={accountEmail}
             accountEmail={accountEmail}
             categories={cardCategories}
-            rawEmails={msgs}
+            rawEmails={emails}
             selectedEmails={selectedEmails}
             toggleEmailSelection={onToggleSelect}
-            selectAllEmails={(sel) => onSelectAll(accountEmail, sel)}
+            selectAllEmails={sel => onSelectAll(accountEmail, sel)}
             unsubscribedEmails={unsubscribedEmails}
             onEmailClick={onEmailClick}
           />
