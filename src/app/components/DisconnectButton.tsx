@@ -7,7 +7,13 @@ interface Props {
 }
 
 const DisconnectButton: React.FC<Props> = ({ uid, onSuccess }) => {
-  const { resetAccountState } = useDashboard();
+  let resetAccountState: ((uid: string) => void) | undefined;
+  try {
+    const { resetAccountState: reset } = useDashboard();
+    resetAccountState = reset;
+  } catch {
+    // Not in HomeContext, that's okay
+  }
 
   function getCookie(name: string): string | undefined {
     const value = `; ${document.cookie}`;
@@ -34,7 +40,9 @@ const DisconnectButton: React.FC<Props> = ({ uid, onSuccess }) => {
 
       if (response.ok) {
         alert("Account successfully disconnected.");
-        resetAccountState(uid);
+        if (resetAccountState) {
+          resetAccountState(uid);
+        }
         onSuccess();
       } else {
         const error = await response.json();
@@ -48,9 +56,9 @@ const DisconnectButton: React.FC<Props> = ({ uid, onSuccess }) => {
   return (
     <button
       onClick={handleDisconnect}
-      className="bg-red-500 text-white px-4 py-2 rounded"
+      className="px-4 py-2 text-sm font-semibold text-red-600 bg-white border-2 border-red-200 rounded-lg hover:bg-red-50 hover:border-red-300 transition-colors"
     >
-      Disconnect Account
+      Disconnect
     </button>
   );
 };
