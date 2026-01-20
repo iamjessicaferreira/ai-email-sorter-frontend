@@ -54,11 +54,28 @@ function RecategorizeButton({
     <button
       onClick={handleClick}
       disabled={isRecategorizing}
-      className="absolute top-2 right-2 p-1.5 rounded-md bg-blue-500 text-white hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed text-xs z-10"
-      title="Recategorizar email"
-      aria-label="Recategorizar email"
+      className="
+        absolute top-2 right-2 p-2 rounded-lg 
+        bg-gradient-to-r from-blue-500 to-blue-600 text-white 
+        hover:from-blue-600 hover:to-blue-700 
+        disabled:opacity-50 disabled:cursor-not-allowed 
+        text-xs z-10 shadow-md hover:shadow-lg
+        transition-all duration-300 ease-out
+        hover:scale-110 active:scale-95
+        focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2
+        group
+      "
+      title="Recategorize this email using AI"
+      aria-label="Recategorize email"
     >
-      {isRecategorizing ? "..." : "↻"}
+      {isRecategorizing ? (
+        <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+      ) : (
+        <span className="text-base">↻</span>
+      )}
     </button>
   );
 }
@@ -107,18 +124,23 @@ export default function FetchedEmailsCard({
   const allSelected = allIds.every((id) => selectedEmails.has(id));
 
   return (
-    <div className="border-2 rounded-xl p-6 shadow-lg bg-white mb-6">
+    <div className="border-2 rounded-xl p-6 shadow-elegant bg-white mb-6 animate-slide-up hover:shadow-elegant-hover transition-all duration-300">
       <h2 className="text-2xl font-bold mb-4 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
         {accountEmail}
       </h2>
 
       {allIds.length > 0 && (
-        <label className="inline-flex items-center mb-4 p-3 bg-gray-50 border-2 rounded-lg hover:bg-gray-100 cursor-pointer transition-colors">
+        <label className="
+          inline-flex items-center mb-4 p-3 bg-gray-50 border-2 rounded-lg 
+          hover:bg-gray-100 hover:shadow-md hover:scale-[1.02]
+          cursor-pointer transition-all duration-300 ease-out
+          active:scale-[0.98]
+        ">
           <input
             type="checkbox"
             checked={allSelected}
             onChange={(e) => selectAllEmails(e.target.checked)}
-            className="mr-3 w-4 h-4"
+            className="mr-3 w-4 h-4 cursor-pointer accent-blue-600"
           />
           <span className="font-semibold text-gray-900">Select all from account</span>
         </label>
@@ -130,15 +152,27 @@ export default function FetchedEmailsCard({
         const emailIds = emailsForCat.map(e => e.id);
 
         return (
-          <div key={cat.name} className="border-2 rounded-lg mb-4 overflow-hidden">
+          <div key={cat.name} className="border-2 rounded-lg mb-4 overflow-hidden shadow-sm hover:shadow-md transition-all duration-300">
             <button
-              className="w-full px-5 py-3 bg-gradient-to-r from-blue-50 to-purple-50 hover:from-blue-100 hover:to-purple-100 flex justify-between items-center transition-all"
+              className="
+                w-full px-5 py-3 bg-gradient-to-r from-blue-50 to-purple-50 
+                hover:from-blue-100 hover:to-purple-100 
+                flex justify-between items-center 
+                transition-all duration-300 ease-out
+                hover:scale-[1.01] active:scale-[0.99]
+                focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2
+              "
               onClick={() => handleCategoryToggle(cat.name, emailIds)}
             >
               <div className="flex items-center gap-3">
                 <span className="font-bold text-gray-900 text-lg">{cat.name}</span>
                 {unreadCount > 0 && (
-                  <span className="bg-blue-600 text-white text-xs font-bold px-2 py-1 rounded-full min-w-[24px] text-center">
+                  <span className="
+                    bg-blue-600 text-white text-xs font-bold px-2 py-1 rounded-full 
+                    min-w-[24px] text-center
+                    animate-pulse shadow-md
+                    transform transition-transform duration-300 hover:scale-110
+                  ">
                     {unreadCount > 99 ? '99+' : unreadCount}
                   </span>
                 )}
@@ -156,10 +190,18 @@ export default function FetchedEmailsCard({
                   {emailsForCat.length === 0 ? (
                     <p className="text-gray-500">No emails in this category.</p>
                   ) : (
-                    emailsForCat.map((e) => (
+                    emailsForCat.map((e, index) => (
                       <li
                         key={`${accountEmail}-${e.id}`}
-                        className="p-4 border-2 rounded-lg bg-white hover:shadow-md transition-all relative"
+                        className="
+                          p-4 border-2 rounded-lg bg-white 
+                          hover:shadow-elegant-hover hover:scale-[1.02] hover:border-blue-300
+                          transition-all duration-300 ease-out relative
+                          animate-slide-up
+                        "
+                        style={{
+                          animationDelay: `${index * 0.05}s`
+                        }}
                       >
                         {onRecategorize && (
                           <RecategorizeButton
@@ -239,9 +281,16 @@ export default function FetchedEmailsCard({
         const uncategorizedUnread = unreadEmailsByCategory["Uncategorized"]?.size || 0;
         
         return uncategorizedEmails.length > 0 && (
-          <div className="border-2 rounded-lg mb-4 overflow-hidden">
+          <div className="border-2 rounded-lg mb-4 overflow-hidden shadow-sm hover:shadow-md transition-all duration-300">
             <button
-              className="w-full px-5 py-3 bg-gradient-to-r from-blue-50 to-purple-50 hover:from-blue-100 hover:to-purple-100 flex justify-between items-center transition-all"
+              className="
+                w-full px-5 py-3 bg-gradient-to-r from-blue-50 to-purple-50 
+                hover:from-blue-100 hover:to-purple-100 
+                flex justify-between items-center 
+                transition-all duration-300 ease-out
+                hover:scale-[1.01] active:scale-[0.99]
+                focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2
+              "
               onClick={() => {
                 setOpenRaw(!openRaw);
                 if (!openRaw && onCategoryOpened) {
@@ -253,7 +302,12 @@ export default function FetchedEmailsCard({
               <div className="flex items-center gap-3">
                 <span className="font-bold text-gray-900 text-lg">Uncategorized Emails</span>
                 {uncategorizedUnread > 0 && (
-                  <span className="bg-blue-600 text-white text-xs font-bold px-2 py-1 rounded-full min-w-[24px] text-center">
+                  <span className="
+                    bg-blue-600 text-white text-xs font-bold px-2 py-1 rounded-full 
+                    min-w-[24px] text-center
+                    animate-pulse shadow-md
+                    transform transition-transform duration-300 hover:scale-110
+                  ">
                     {uncategorizedUnread > 99 ? '99+' : uncategorizedUnread}
                   </span>
                 )}
@@ -264,10 +318,18 @@ export default function FetchedEmailsCard({
             <ul className="p-5 space-y-3 max-h-64 overflow-y-auto bg-white">
               {uniqueEmails
                 .filter((e) => !categories.some((c) => c.name === e.category))
-                .map((e) => (
+                .map((e, index) => (
                   <li
                     key={`${accountEmail}-uncategorized-${e.id}`}
-                    className="p-4 border-2 rounded-lg bg-white hover:shadow-md transition-all relative"
+                    className="
+                      p-4 border-2 rounded-lg bg-white 
+                      hover:shadow-elegant-hover hover:scale-[1.02] hover:border-blue-300
+                      transition-all duration-300 ease-out relative
+                      animate-slide-up
+                    "
+                    style={{
+                      animationDelay: `${index * 0.05}s`
+                    }}
                   >
                     {onRecategorize && (
                       <RecategorizeButton

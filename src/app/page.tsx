@@ -3,11 +3,12 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import Toast from "./components/Toast";
 import Modal from "./components/Modal";
-import Header from "./components/Header";
+import Sidebar from "./components/Sidebar";
 import ConnectSection from "./components/sections/ConnectSection";
 import EmailsSection from "./components/sections/EmailsSection";
 import { backendUrl, HomeContext } from "./utils/HomeContext";
 import { secureFetch } from "./utils/secureFetch";
+import { getCookie } from "./utils/cookies";
 import { format } from "date-fns";
 
 type ApiCategory = { id: number; name: string; description: string; synonyms?: string[] };
@@ -52,56 +53,51 @@ export default function DashboardPage() {
     localStorage.removeItem("byAccount");
   }, []);
 
-  const handleUnauthorized = useCallback(() => {
-    resetAppState();
-    addToast("Sua sessão expirou. Faça login novamente.");
-  }, [resetAppState]);
-
-  const resetAccountState = (uid: string) => {
-    setAccounts((prev) => prev.filter((a) => a.uid !== uid));
-    setByAccount((prev) => {
-      const next = { ...prev };
-      delete next[uid];
-      return next;
-    });
-    setSelectedEmails((prev) => {
-      const allIds = byAccount[uid]?.map(e => e.id) || [];
-      const next = new Set(prev);
-      allIds.forEach(id => next.delete(id));
-      return next;
-    });
-    setUnsubscribedEmails((prev) => {
-      const allIds = byAccount[uid]?.map(e => e.id) || [];
-      const next = new Set(prev);
-      allIds.forEach(id => next.delete(id));
-      return next;
-    });
-    if (openedEmail && openedEmail.account === uid) {
-      setOpenedEmail(null);
-      setOpenedEmailId(null);
-    }
-    const currentByAccount = byAccount;
-    setTimeout(() => {
-      const next = { ...currentByAccount };
-      delete next[uid];
-      localStorage.setItem("byAccount", JSON.stringify(next));
-    }, 0);
-  };
-
-  const addToast = (text: string) => {
+  const addToast = useCallback((text: string) => {
     const id = Math.random().toString(36).slice(2);
     setToasts((toasts) => [...toasts, { id, text }]);
     setTimeout(() => setToasts((toasts) => toasts.filter((t) => t.id !== id)), 4000);
-  };
+  }, []);
 
-  const getCookie = (name: string) =>
-    document.cookie
-      .split("; ")
-      .find((row) => row.startsWith(name + "="))
-      ?.split("=")[1] || "";
+  const handleUnauthorized = useCallback(() => {
+    resetAppState();
+    addToast("Sua sessão expirou. Faça login novamente.");
+  }, [resetAppState, addToast]);
 
-      useEffect(() => {
-        const csrftoken = getCookie("csrftoken");
+  const resetAccountState = useCallback((uid: string) => {
+    setAccounts((prev) => prev.filter((a) => a.uid !== uid));
+    setByAccount((prev) => {
+      const next = { ...prev };
+      const accountEmails = prev[uid]?.map(e => e.id) || [];
+      delete next[uid];
+      
+      setSelectedEmails((current) => {
+        const updated = new Set(current);
+        accountEmails.forEach(id => updated.delete(id));
+        return updated;
+      });
+      
+      setUnsubscribedEmails((current) => {
+        const updated = new Set(current);
+        accountEmails.forEach(id => updated.delete(id));
+        return updated;
+      });
+      
+      localStorage.setItem("byAccount", JSON.stringify(next));
+      return next;
+    });
+    
+    setOpenedEmail((current) => {
+      if (current?.account === uid) {
+        setOpenedEmailId(null);
+        return null;
+      }
+      return current;
+    });
+  }, []);
+
+  useEffect(() => {
+    const csrftoken = getCookie("csrftoken");
         secureFetch(
           `${backendUrl}/api/categories/`,
           {
@@ -611,25 +607,51 @@ export default function DashboardPage() {
   return (
     <HomeContext.Provider value={{ resetAccountState, resetAppState }}>
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
-        <Header />
-        <main className="p-6 max-w-6xl mx-auto space-y-8">
-          <div className="text-center space-y-2 mb-8">
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-              Email Dashboard
-            </h1>
-            <p className="text-gray-600">Organize and manage your emails with AI</p>
-          </div>
+        <Sidebar />
+        <main className="lg:ml-64">
+          <div className="max-w-7xl mx-auto p-6">
+            <div className="mb-8 animate-fade-in">
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h1 className="text-3xl lg:text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent animate-slide-in mb-2">
+                    Email Dashboard
+                  </h1>
+                  <p className="text-gray-600 animate-slide-in" style={{ animationDelay: '0.1s' }}>
+                    Organize and manage your emails with AI
+                  </p>
+                </div>
+                <div className="hidden lg:flex items-center gap-4">
+                  <div className="bg-white rounded-xl p-4 shadow-elegant border border-gray-200">
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-500 rounded-lg flex items-center justify-center">
+                        <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500">Total Categories</p>
+                        <p className="text-2xl font-bold text-gray-900">{cardCategories.length}</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
 
-        <ConnectSection
-          cardCategories={cardCategories}
-          newCategory={newCategory}
-          setNewCategory={setNewCategory}
-          addCategory={addCategory}
-          onDeleteCategory={deleteCategory}
-          onUpdateCategory={updateCategory}
-        />
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div className="lg:col-span-1 space-y-6">
+                <ConnectSection
+                  cardCategories={cardCategories}
+                  newCategory={newCategory}
+                  setNewCategory={setNewCategory}
+                  addCategory={addCategory}
+                  onDeleteCategory={deleteCategory}
+                  onUpdateCategory={updateCategory}
+                />
+              </div>
 
-        <EmailsSection
+              <div className="lg:col-span-2">
+                <EmailsSection
           byAccount={byAccount}
           selectedEmails={selectedEmails}
           unsubscribedEmails={unsubscribedEmails}
@@ -659,36 +681,117 @@ export default function DashboardPage() {
               return newState;
             });
           }}
-        />
+                />
+              </div>
+            </div>
+          </div>
+        </main>
 
         <div className="fixed top-4 right-4 space-y-2 z-50">
-          {toasts.map((t) => (
-            <Toast key={t.id} message={t.text} onDone={() => setToasts((all) => all.filter((x) => x.id !== t.id))} />
+          {toasts.map((t, index) => (
+            <div 
+              key={t.id} 
+              className="animate-slide-in-right"
+              style={{ animationDelay: `${index * 0.1}s` }}
+            >
+              <Toast message={t.text} onDone={() => setToasts((all) => all.filter((x) => x.id !== t.id))} />
+            </div>
           ))}
         </div>
-      </main>
 
-      <Modal
-        isOpen={!!openedEmailId}
-        onClose={() => {
-          setOpenedEmailId(null);
-          setOpenedEmail(null);
-        }}
-      >
-        {loadingEmail ? (
-          <p>Loading...</p>
-        ) : openedEmail ? (
-          <>
-            <h2 className="text-xl font-bold">{openedEmail.subject}</h2>
-            <p className="text-xs text-gray-500">
-              {format(new Date(openedEmail.received_at), "dd/MM/yyyy HH:mm")}
-            </p>
-            <div className="mt-4 prose max-w-none" dangerouslySetInnerHTML={{ __html: openedEmail.body }} />
-          </>
-        ) : (
-          <p>Could not load email.</p>
-        )}
-      </Modal>
+        <Modal
+          isOpen={!!openedEmailId}
+          onClose={() => {
+            setOpenedEmailId(null);
+            setOpenedEmail(null);
+          }}
+        >
+          {loadingEmail ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="text-center space-y-4">
+                <svg
+                  className="animate-spin h-8 w-8 mx-auto text-blue-600"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  ></circle>
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                  ></path>
+                </svg>
+                <p className="text-gray-600">Loading email...</p>
+              </div>
+            </div>
+          ) : openedEmail ? (
+            <div className="space-y-6 animate-fade-in">
+              <div className="border-b border-gray-200 pb-6">
+                <div className="flex items-start justify-between gap-4 mb-4">
+                  <div className="flex-1">
+                    <h2 className="text-2xl lg:text-3xl font-bold text-gray-900 mb-3 leading-tight">
+                      {openedEmail.subject}
+                    </h2>
+                    <div className="flex items-center gap-4 text-sm text-gray-600">
+                      <div className="flex items-center gap-2">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                        <span>{format(new Date(openedEmail.received_at), "dd/MM/yyyy 'às' HH:mm")}</span>
+                      </div>
+                      {openedEmail.category && openedEmail.category !== 'none' && (
+                        <div className="flex items-center gap-2">
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                          </svg>
+                          <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded-md text-xs font-medium">
+                            {openedEmail.category}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="prose prose-lg max-w-none">
+                <div 
+                  className="
+                    email-content text-gray-700 leading-relaxed
+                    [&_p]:mb-4 [&_p]:text-base
+                    [&_h1]:text-2xl [&_h1]:font-bold [&_h1]:mb-4 [&_h1]:mt-6
+                    [&_h2]:text-xl [&_h2]:font-bold [&_h2]:mb-3 [&_h2]:mt-5
+                    [&_h3]:text-lg [&_h3]:font-semibold [&_h3]:mb-2 [&_h3]:mt-4
+                    [&_ul]:list-disc [&_ul]:ml-6 [&_ul]:mb-4
+                    [&_ol]:list-decimal [&_ol]:ml-6 [&_ol]:mb-4
+                    [&_li]:mb-2
+                    [&_a]:text-blue-600 [&_a]:underline [&_a]:hover:text-blue-800
+                    [&_img]:max-w-full [&_img]:rounded-lg [&_img]:my-4
+                    [&_blockquote]:border-l-4 [&_blockquote]:border-gray-300 [&_blockquote]:pl-4 [&_blockquote]:italic [&_blockquote]:my-4
+                    [&_code]:bg-gray-100 [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded [&_code]:text-sm [&_code]:font-mono
+                    [&_pre]:bg-gray-100 [&_pre]:p-4 [&_pre]:rounded-lg [&_pre]:overflow-x-auto [&_pre]:my-4
+                  "
+                  dangerouslySetInnerHTML={{ __html: openedEmail.body }} 
+                />
+              </div>
+            </div>
+          ) : (
+            <div className="text-center py-12">
+              <svg className="w-16 h-16 mx-auto text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <p className="text-gray-600 text-lg">Could not load email.</p>
+            </div>
+          )}
+        </Modal>
       </div>
     </HomeContext.Provider>
   );

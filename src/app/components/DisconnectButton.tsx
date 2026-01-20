@@ -1,5 +1,7 @@
 import React from "react";
 import { backendUrl, useDashboard } from "../utils/HomeContext";
+import { Button } from "@/components/ui/button";
+import { getCookie } from "../utils/cookies";
 
 interface Props {
   uid: string;
@@ -9,17 +11,10 @@ interface Props {
 const DisconnectButton: React.FC<Props> = ({ uid, onSuccess }) => {
   let resetAccountState: ((uid: string) => void) | undefined;
   try {
-    const { resetAccountState: reset } = useDashboard();
-    resetAccountState = reset;
+    const context = useDashboard();
+    resetAccountState = context.resetAccountState;
   } catch {
-    // Not in HomeContext, that's okay
-  }
-
-  function getCookie(name: string): string | undefined {
-    const value = `; ${document.cookie}`;
-    const parts = value.split(`; ${name}=`);
-    if (parts.length === 2) return parts.pop()?.split(";").shift();
-    return undefined;
+    // Component can be used outside HomeContext
   }
 
   const handleDisconnect = async () => {
@@ -28,7 +23,7 @@ const DisconnectButton: React.FC<Props> = ({ uid, onSuccess }) => {
 
     const csrftoken = getCookie("csrftoken");
     try {
-      const response = await fetch( `${backendUrl}/api/auth/disconnect-google/`, {
+      const response = await fetch(`${backendUrl}/api/auth/disconnect-google/`, {
         method: "POST",
         credentials: "include",
         headers: {
@@ -54,12 +49,18 @@ const DisconnectButton: React.FC<Props> = ({ uid, onSuccess }) => {
   };
 
   return (
-    <button
+    <Button
       onClick={handleDisconnect}
-      className="px-4 py-2 text-sm font-semibold text-red-600 bg-white border-2 border-red-200 rounded-lg hover:bg-red-50 hover:border-red-300 transition-colors"
+      variant="outline"
+      size="sm"
+      tooltip="Disconnect this Gmail account"
+      className="border-2 border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300"
     >
+      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+      </svg>
       Disconnect
-    </button>
+    </Button>
   );
 };
 

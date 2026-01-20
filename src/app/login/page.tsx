@@ -49,8 +49,8 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-purple-50 p-4">
-      <div className="w-full max-w-6xl space-y-8">
-        <div className="text-center space-y-4">
+      <div className="w-full max-w-6xl space-y-8 animate-fade-in">
+        <div className="text-center space-y-4 animate-slide-in">
           <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
             AI Email Sorter
           </h1>
@@ -85,9 +85,9 @@ export default function LoginPage() {
         </div>
 
         <div className="flex justify-center">
-          <Card className="shadow-lg border-2 w-full max-w-md">
+          <Card className="shadow-elegant border-2 w-full max-w-md hover:shadow-elegant-hover transition-all duration-300 animate-scale-in">
           <CardHeader className="space-y-3">
-            <div className="flex items-center justify-center w-16 h-16 mx-auto bg-blue-100 rounded-full mb-2">
+            <div className="flex items-center justify-center w-16 h-16 mx-auto bg-blue-100 rounded-full mb-2 animate-pulse">
               <svg
                 className="w-8 h-8 text-blue-600"
                 fill="none"
@@ -144,7 +144,14 @@ export default function LoginPage() {
             <Button
               onClick={handleLogin}
               disabled={isLoading}
-              className="w-full h-12 text-base font-semibold shadow-md hover:shadow-lg transition-shadow bg-black text-white hover:bg-gray-800"
+              className="
+                w-full h-12 text-base font-semibold 
+                shadow-md hover:shadow-lg hover:scale-[1.02]
+                transition-all duration-300 ease-out
+                active:scale-[0.98]
+                bg-black text-white hover:bg-gray-800
+                disabled:hover:scale-100
+              "
               size="lg"
             >
               {isLoading ? (

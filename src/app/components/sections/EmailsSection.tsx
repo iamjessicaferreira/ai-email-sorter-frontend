@@ -1,5 +1,6 @@
 import FetchedEmailsCard from "../FetchedEmailsCard";
 import { CardCategory } from "@/app/page";
+import { Button } from "@/components/ui/button";
 type Incoming = {
   account: string;
   id: string;
@@ -44,8 +45,8 @@ export default function EmailsSection({
   accounts = [],
 }: Props) {
   return (
-    <section className="space-y-6">
-      <div className="flex items-center justify-between">
+    <section className="space-y-6 animate-fade-in">
+      <div className="flex items-center justify-between animate-slide-in">
         <div>
           <h2 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
             New Emails
@@ -62,19 +63,26 @@ export default function EmailsSection({
               <option value="delete">Delete</option>
               <option value="unsubscribe">Unsubscribe</option>
             </select>
-            <button
+            <Button
               onClick={onBulkApply}
               disabled={!selectedEmails.size}
-              className="bg-red-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-red-700 shadow-md hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              variant="destructive"
+              tooltip={action === "delete" ? "Delete selected emails permanently" : "Unsubscribe from selected email senders"}
             >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                {action === "delete" ? (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                ) : (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+                )}
+              </svg>
               Apply to {selectedEmails.size} email{selectedEmails.size !== 1 ? 's' : ''}
-            </button>
+            </Button>
           </div>
         )}
       </div>
 
       {(() => {
-        // Get all account emails from both accounts list and byAccount
         const allAccountEmails = new Set<string>();
         accounts.forEach(acc => {
           if (acc.email) {
@@ -87,9 +95,9 @@ export default function EmailsSection({
         
         if (accountEmailsArray.length === 0) {
           return (
-            <div className="text-center py-12 bg-white border-2 rounded-xl shadow-lg">
+            <div className="text-center py-12 bg-white border-2 rounded-xl shadow-elegant animate-scale-in">
               <svg
-                className="w-16 h-16 mx-auto text-gray-400 mb-4"
+                className="w-16 h-16 mx-auto text-gray-400 mb-4 animate-pulse"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"

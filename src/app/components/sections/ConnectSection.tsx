@@ -51,74 +51,108 @@ export default function ConnectSection({
   };
 
   return (
-    <section className="space-y-6">
-      <Card className="shadow-lg border-2">
-        <CardHeader>
-          <CardTitle className="text-2xl bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-            Add Category
-          </CardTitle>
-          <CardDescription>
-            Create a new category to organize your emails
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex gap-3">
-            <Input
-              placeholder="Category name"
-              value={newCategory.name}
-              onChange={(e) =>
-                setNewCategory({ ...newCategory, name: e.target.value })
-              }
-              className="flex-1 border-2"
-            />
-            <Input
-              placeholder="Description"
-              value={newCategory.description}
-              onChange={(e) =>
-                setNewCategory({ ...newCategory, description: e.target.value })
-              }
-              className="flex-1 border-2"
-            />
-            <Button 
-              onClick={addCategory}
-              className="bg-black text-white hover:bg-gray-800 shadow-md hover:shadow-lg transition-shadow px-6"
-            >
-              Add
-            </Button>
+    <section className="space-y-6 animate-fade-in">
+      <Card className="shadow-elegant border-2 hover:shadow-elegant-hover transition-all duration-300 animate-slide-up">
+        <CardHeader className="pb-4">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-500 rounded-lg flex items-center justify-center">
+              <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+            </div>
+            <div>
+              <CardTitle className="text-xl bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                Create Category
+              </CardTitle>
+              <CardDescription className="text-xs">
+                Organize emails automatically
+              </CardDescription>
+            </div>
           </div>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <Input
+            placeholder="Category name (e.g., Work, Personal)"
+            value={newCategory.name}
+            onChange={(e) =>
+              setNewCategory({ ...newCategory, name: e.target.value })
+            }
+            className="border-2 focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+          />
+          <Input
+            placeholder="Description (optional)"
+            value={newCategory.description}
+            onChange={(e) =>
+              setNewCategory({ ...newCategory, description: e.target.value })
+            }
+            className="border-2 focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+          />
+          <Button 
+            onClick={addCategory}
+            tooltip="Create a new category to organize your emails"
+            className="w-full"
+            disabled={!newCategory.name.trim()}
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+            Create Category
+          </Button>
         </CardContent>
       </Card>
 
       {cardCategories.length > 0 && (
-        <Card className="shadow-lg border-2">
-          <CardHeader>
-            <CardTitle className="text-2xl bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-              My Categories
-            </CardTitle>
-            <CardDescription>
-              {cardCategories.length} categor{cardCategories.length !== 1 ? 'ies' : 'y'} created
-            </CardDescription>
+        <Card className="shadow-elegant border-2 hover:shadow-elegant-hover transition-all duration-300 animate-slide-up">
+          <CardHeader className="pb-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-emerald-500 rounded-lg flex items-center justify-center">
+                  <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                  </svg>
+                </div>
+                <div>
+                  <CardTitle className="text-xl bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                    My Categories
+                  </CardTitle>
+                  <CardDescription className="text-xs">
+                    {cardCategories.length} categor{cardCategories.length !== 1 ? 'ies' : 'y'}
+                  </CardDescription>
+                </div>
+              </div>
+            </div>
           </CardHeader>
           <CardContent>
-            <ul className="space-y-3">
-              {cardCategories.map((c) => (
+            <ul className="space-y-2">
+              {cardCategories.map((c, index) => (
                 <li 
                   key={c.id} 
-                  className="flex items-center justify-between p-4 border-2 rounded-lg bg-white hover:shadow-md transition-shadow"
+                  className="
+                    flex items-center justify-between p-3 border-2 rounded-lg bg-white 
+                    hover:shadow-elegant-hover hover:scale-[1.01] hover:border-blue-300
+                    transition-all duration-300 ease-out
+                    animate-slide-up
+                  "
+                  style={{
+                    animationDelay: `${index * 0.05}s`
+                  }}
                 >
-                  <div className="flex-1">
-                    <span className="font-bold text-gray-900 text-lg">{c.name}</span>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex-shrink-0"></div>
+                      <span className="font-semibold text-gray-900 truncate">{c.name}</span>
+                    </div>
                     {c.description && (
-                      <p className="mt-1 text-gray-600 text-sm">{c.description}</p>
+                      <p className="mt-1 text-gray-600 text-xs truncate">{c.description}</p>
                     )}
                   </div>
-                  <div className="flex gap-2 ml-4">
+                  <div className="flex gap-1.5 ml-3 flex-shrink-0">
                     <Button
                       onClick={() => handleEdit(c)}
-                      variant="outline"
-                      size="sm"
-                      className="border-2 hover:bg-gray-50 p-2"
-                      title="Edit category"
+                      variant="ghost"
+                      size="icon"
+                      tooltip="Edit category name and description"
+                      className="h-8 w-8"
                     >
                       <svg
                         className="w-4 h-4"
@@ -136,10 +170,10 @@ export default function ConnectSection({
                     </Button>
                     <Button
                       onClick={() => handleDelete(c.id)}
-                      variant="outline"
-                      size="sm"
-                      className="border-2 border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 p-2"
-                      title="Delete category"
+                      variant="ghost"
+                      size="icon"
+                      tooltip="Delete this category (emails will become uncategorized)"
+                      className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50"
                     >
                       <svg
                         className="w-4 h-4"
@@ -195,13 +229,13 @@ export default function ConnectSection({
             <Button 
               variant="outline" 
               onClick={() => setEditingCategory(null)}
-              className="border-2"
+              tooltip="Cancel editing"
             >
               Cancel
             </Button>
             <Button 
               onClick={handleSaveEdit}
-              className="bg-black text-white hover:bg-gray-800 shadow-md hover:shadow-lg transition-shadow"
+              tooltip="Save the changes to this category"
             >
               Save Changes
             </Button>

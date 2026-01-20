@@ -5,8 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { backendUrl } from "../utils/HomeContext";
 import { useRouter } from "next/navigation";
+import { getCookie } from "../utils/cookies";
 import DisconnectButton from "../components/DisconnectButton";
-import Header from "../components/Header";
+import Sidebar from "../components/Sidebar";
 
 type GmailAccount = { uid: string; email: string | null };
 
@@ -96,13 +97,6 @@ export default function ManageAccountsPage() {
     }
   };
 
-  const getCookie = (name: string): string | undefined => {
-    const value = `; ${document.cookie}`;
-    const parts = value.split(`; ${name}=`);
-    if (parts.length === 2) return parts.pop()?.split(";").shift();
-    return undefined;
-  };
-
   const handleDisconnectAll = async () => {
     if (accounts.length === 0) return;
 
@@ -159,32 +153,47 @@ export default function ManageAccountsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Header />
-      <main className="p-6 max-w-4xl mx-auto space-y-8">
-        <div>
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-2">
-            Manage Accounts
-          </h1>
-          <p className="text-gray-600">Connect and manage your Gmail accounts</p>
-        </div>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+      <Sidebar />
+      <main className="lg:ml-64">
+        <div className="max-w-7xl mx-auto p-6">
+          <div className="mb-8 animate-fade-in">
+            <div>
+              <h1 className="text-3xl lg:text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent animate-slide-in mb-2">
+                Manage Accounts
+              </h1>
+              <p className="text-gray-600 animate-slide-in" style={{ animationDelay: '0.1s' }}>
+                Connect and manage your Gmail accounts
+              </p>
+            </div>
+          </div>
 
-        {accounts.length > 0 && (
-          <Card className="shadow-lg border-2">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="text-xl">Active Accounts</CardTitle>
-                  <CardDescription>
-                    {accounts.length} account{accounts.length !== 1 ? 's' : ''} connected
-                  </CardDescription>
-                </div>
-                <Button
-                  onClick={handleDisconnectAll}
-                  disabled={disconnectingAll}
-                  variant="outline"
-                  className="border-2 border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 disabled:opacity-50"
-                >
+          <div className="space-y-6">
+
+            {accounts.length > 0 && (
+              <Card className="shadow-elegant border-2 hover:shadow-elegant-hover transition-all duration-300 animate-slide-up">
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-emerald-500 rounded-lg flex items-center justify-center">
+                        <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                        </svg>
+                      </div>
+                      <div>
+                        <CardTitle className="text-xl">Active Accounts</CardTitle>
+                        <CardDescription>
+                          {accounts.length} account{accounts.length !== 1 ? 's' : ''} connected
+                        </CardDescription>
+                      </div>
+                    </div>
+                    <Button
+                      onClick={handleDisconnectAll}
+                      disabled={disconnectingAll}
+                      variant="outline"
+                      tooltip="Disconnect all Gmail accounts at once"
+                      className="border-2 border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 disabled:opacity-50"
+                    >
                   {disconnectingAll ? (
                     <>
                       <svg
@@ -215,78 +224,89 @@ export default function ManageAccountsPage() {
                 </Button>
               </div>
             </CardHeader>
-            <CardContent>
-              {loadingAccounts ? (
-                <div className="text-center py-8">
-                  <svg
-                    className="animate-spin h-6 w-6 mx-auto text-blue-600"
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                  >
-                    <circle
-                      className="opacity-25"
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      strokeWidth="4"
-                    ></circle>
-                    <path
-                      className="opacity-75"
-                      fill="currentColor"
-                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                    ></path>
-                  </svg>
-                </div>
-              ) : (
-                <ul className="space-y-3">
-                  {accounts.map((acc) => (
-                    <li
-                      key={acc.uid}
-                      className="flex items-center justify-between p-4 border-2 rounded-lg bg-white hover:shadow-md transition-shadow"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white font-semibold">
-                          {acc.email?.[0]?.toUpperCase() || 'G'}
-                        </div>
-                        <div>
-                          <p className="font-semibold text-gray-900">{acc.email}</p>
-                          <p className="text-sm text-gray-500">Gmail Account</p>
-                        </div>
-                      </div>
-                      <DisconnectButton uid={acc.uid} onSuccess={handleRefresh} />
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </CardContent>
-          </Card>
-        )}
+                <CardContent>
+                  {loadingAccounts ? (
+                    <div className="text-center py-8">
+                      <svg
+                        className="animate-spin h-6 w-6 mx-auto text-blue-600"
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        ></circle>
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                        ></path>
+                      </svg>
+                    </div>
+                  ) : (
+                    <ul className="space-y-3">
+                      {accounts.map((acc, index) => (
+                        <li
+                          key={acc.uid}
+                          className="
+                            flex items-center justify-between p-4 border-2 rounded-lg bg-white 
+                            hover:shadow-elegant-hover hover:scale-[1.01] hover:border-blue-300
+                            transition-all duration-300 ease-out
+                            animate-slide-up
+                          "
+                          style={{
+                            animationDelay: `${index * 0.05}s`
+                          }}
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white font-semibold text-lg shadow-md">
+                              {acc.email?.[0]?.toUpperCase() || 'G'}
+                            </div>
+                            <div>
+                              <p className="font-semibold text-gray-900">{acc.email}</p>
+                              <p className="text-sm text-gray-500">Gmail Account</p>
+                            </div>
+                          </div>
+                          <DisconnectButton uid={acc.uid} onSuccess={handleRefresh} />
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </CardContent>
+              </Card>
+            )}
 
-        <Card className="shadow-lg border-2">
-          <CardHeader className="space-y-3">
-            <div className="flex items-center justify-center w-16 h-16 mx-auto bg-blue-100 rounded-full mb-2">
-              <svg
-                className="w-8 h-8 text-blue-600"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-                />
-              </svg>
-            </div>
-            <CardTitle className="text-2xl text-center">Add Gmail Account</CardTitle>
-            <CardDescription className="text-center text-base">
-              Connect another Gmail account to monitor
-            </CardDescription>
-          </CardHeader>
+            <Card className="shadow-elegant border-2 hover:shadow-elegant-hover transition-all duration-300 animate-slide-up">
+              <CardHeader className="space-y-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-500 rounded-lg flex items-center justify-center">
+                    <svg
+                      className="w-5 h-5 text-white"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                      />
+                    </svg>
+                  </div>
+                  <div>
+                    <CardTitle className="text-xl">Add Gmail Account</CardTitle>
+                    <CardDescription>
+                      Connect another Gmail account to monitor
+                    </CardDescription>
+                  </div>
+                </div>
+              </CardHeader>
           <CardContent className="space-y-6">
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 space-y-3">
               <div className="flex items-start gap-3">
@@ -316,12 +336,13 @@ export default function ManageAccountsPage() {
               </div>
             </div>
 
-            <Button
-              onClick={handleLogin}
-              disabled={isLoading}
-              className="w-full h-12 text-base font-semibold shadow-md hover:shadow-lg transition-shadow bg-black text-white hover:bg-gray-800"
-              size="lg"
-            >
+              <Button
+                onClick={handleLogin}
+                disabled={isLoading}
+                tooltip="Connect a new Gmail account to start organizing emails"
+                className="w-full"
+                size="lg"
+              >
               {isLoading ? (
                 <>
                   <svg
@@ -363,20 +384,12 @@ export default function ManageAccountsPage() {
               )}
             </Button>
 
-            <p className="text-xs text-center text-gray-500">
-              By continuing, you agree to our terms of service and privacy policy
-            </p>
-          </CardContent>
-        </Card>
-
-        <div className="flex justify-center">
-          <Button
-            variant="outline"
-            onClick={() => router.push("/")}
-            className="border-2"
-          >
-            ← Back to Dashboard
-          </Button>
+              <p className="text-xs text-center text-gray-500">
+                By continuing, you agree to our terms of service and privacy policy
+              </p>
+            </CardContent>
+          </Card>
+          </div>
         </div>
       </main>
     </div>
