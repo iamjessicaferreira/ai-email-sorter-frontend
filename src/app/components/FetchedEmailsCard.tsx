@@ -392,7 +392,7 @@ export default function FetchedEmailsCard({
                         onClick={() => onEmailClick(e.id)}
                         className="text-xs text-blue-600 hover:underline mt-1 self-start"
                       >
-                        Ver conteúdo completo →
+                        View full content →
                       </button>
                     )}
                   </li>
