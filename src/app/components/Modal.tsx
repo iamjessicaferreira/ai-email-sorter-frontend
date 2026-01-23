@@ -23,7 +23,13 @@ export default function Modal({ isOpen, onClose, children }: Props) {
 
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
+      // Only close on Escape if not typing in an input/textarea
+      if (e.key === "Escape") {
+        const target = e.target as HTMLElement;
+        if (target.tagName !== 'INPUT' && target.tagName !== 'TEXTAREA' && !target.isContentEditable) {
+          onClose();
+        }
+      }
     };
     document.addEventListener("keydown", handleKey);
     return () => document.removeEventListener("keydown", handleKey);
@@ -51,6 +57,18 @@ export default function Modal({ isOpen, onClose, children }: Props) {
           ${isOpen ? 'scale-100 opacity-100' : 'scale-95 opacity-0'}
         `}
         onClick={(e) => e.stopPropagation()}
+        onKeyDown={(e) => {
+          // Prevent Escape key from closing when typing in inputs or textareas
+          const target = e.target as HTMLElement;
+          if (e.key === 'Escape' && (
+            target.tagName === 'INPUT' || 
+            target.tagName === 'TEXTAREA' || 
+            target.isContentEditable
+          )) {
+            e.stopPropagation();
+            e.preventDefault();
+          }
+        }}
         style={{
           animation: isOpen ? 'scaleIn 0.3s ease-out' : undefined
         }}

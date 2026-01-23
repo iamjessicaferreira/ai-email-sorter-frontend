@@ -25,8 +25,8 @@ type Props = {
   selectAllEmails: (selectAll: boolean) => void;
   onEmailClick: (id: string) => void;
   onRecategorize?: (emailId: string) => Promise<void>;
-  unreadEmailsByCategory?: Record<string, Set<string>>;
-  onCategoryOpened?: (categoryName: string, emailIds: string[]) => void;
+  unreadEmailsByCategory?: Record<string, Record<string, Set<string>>>;
+  onCategoryOpened?: (accountEmail: string, categoryName: string, emailIds: string[]) => void;
 };
 
 function RecategorizeButton({
@@ -104,7 +104,7 @@ export default function FetchedEmailsCard({
       setOpenCat(categoryName);
       // Mark emails as read when category is opened
       if (onCategoryOpened) {
-        onCategoryOpened(categoryName, emailIds);
+        onCategoryOpened(accountEmail, categoryName, emailIds);
       }
     }
   };
@@ -148,7 +148,8 @@ export default function FetchedEmailsCard({
 
       {categories.map((cat) => {
         const emailsForCat = uniqueEmails.filter((e) => e.category === cat.name);
-        const unreadCount = unreadEmailsByCategory[cat.name]?.size || 0;
+        // Get unread count for this specific account and category
+        const unreadCount = unreadEmailsByCategory[accountEmail]?.[cat.name]?.size || 0;
         const emailIds = emailsForCat.map(e => e.id);
 
         return (
@@ -278,7 +279,8 @@ export default function FetchedEmailsCard({
       {(() => {
         const uncategorizedEmails = uniqueEmails.filter((e) => !categories.some((c) => c.name === e.category));
         const uncategorizedIds = uncategorizedEmails.map(e => e.id);
-        const uncategorizedUnread = unreadEmailsByCategory["Uncategorized"]?.size || 0;
+        // Get unread count for this specific account and uncategorized
+        const uncategorizedUnread = unreadEmailsByCategory[accountEmail]?.["Uncategorized"]?.size || 0;
         
         return uncategorizedEmails.length > 0 && (
           <div className="border-2 rounded-lg mb-4 overflow-hidden shadow-sm hover:shadow-md transition-all duration-300">
@@ -295,7 +297,7 @@ export default function FetchedEmailsCard({
                 setOpenRaw(!openRaw);
                 if (!openRaw && onCategoryOpened) {
                   // Mark uncategorized emails as read when opened
-                  onCategoryOpened("Uncategorized", uncategorizedIds);
+                  onCategoryOpened(accountEmail, "Uncategorized", uncategorizedIds);
                 }
               }}
             >

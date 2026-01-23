@@ -23,8 +23,8 @@ type Props = {
   onSelectAll: (account: string, sel: boolean) => void;
   onEmailClick: (id: string) => void;
   onRecategorize?: (emailId: string) => Promise<void>;
-  unreadEmailsByCategory?: Record<string, Set<string>>;
-  onCategoryOpened?: (categoryName: string, emailIds: string[]) => void;
+  unreadEmailsByCategory?: Record<string, Record<string, Set<string>>>;
+  onCategoryOpened?: (accountEmail: string, categoryName: string, emailIds: string[]) => void;
   accounts?: Array<{ uid: string; email: string | null }>;
 };
 

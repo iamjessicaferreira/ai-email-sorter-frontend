@@ -107,43 +107,27 @@ export default function ManageAccountsPage() {
 
     setDisconnectingAll(true);
     const csrftoken = getCookie("csrftoken");
-    const results = { success: 0, failed: 0 };
 
     try {
-      for (const account of accounts) {
-        try {
-          const response = await fetch(`${backendUrl}/api/auth/disconnect-google/`, {
-            method: "POST",
-            credentials: "include",
-            headers: {
-              "Content-Type": "application/json",
-              ...(csrftoken && { "X-CSRFToken": csrftoken }),
-            },
-            body: JSON.stringify({ uid: account.uid }),
-          });
+      // Use the new endpoint that disconnects all accounts at once
+      const response = await fetch(`${backendUrl}/api/auth/disconnect-all-google/`, {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+          ...(csrftoken && { "X-CSRFToken": csrftoken }),
+        },
+      });
 
-          if (response.ok) {
-            results.success++;
-          } else {
-            results.failed++;
-            const error = await response.json();
-            console.error(`Failed to disconnect ${account.email}:`, error);
-          }
-        } catch (err) {
-          results.failed++;
-          console.error(`Error disconnecting ${account.email}:`, err);
-        }
-      }
-
-      if (results.success > 0) {
-        alert(`Successfully disconnected ${results.success} account${results.success !== 1 ? 's' : ''}.${results.failed > 0 ? ` Failed to disconnect ${results.failed} account${results.failed !== 1 ? 's' : ''}.` : ''}`);
+      if (response.ok) {
+        const data = await response.json();
+        alert(`Successfully disconnected all ${data.accounts_disconnected || accounts.length} account${data.accounts_disconnected !== 1 ? 's' : ''}.`);
         await handleRefresh();
-        if (results.success === accounts.length) {
-          // All accounts disconnected, redirect to login
-          router.push("/login");
-        }
+        // All accounts disconnected, redirect to login
+        router.push("/login");
       } else {
-        alert(`Failed to disconnect accounts. Please try again.`);
+        const error = await response.json();
+        alert(`Error: ${error.error || error.message || "Failed to disconnect accounts. Please try again."}`);
       }
     } catch (err) {
       alert(`Error: ${err}. Failed to disconnect accounts.`);

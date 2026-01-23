@@ -39,7 +39,8 @@ export default function DashboardPage() {
   const [openedEmail, setOpenedEmail] = useState<Incoming | null>(null);
   const [loadingEmail, setLoadingEmail] = useState(false);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
-  const [unreadEmailsByCategory, setUnreadEmailsByCategory] = useState<Record<string, Set<string>>>({});
+  // Structure: accountEmail -> categoryName -> Set<emailIds>
+  const [unreadEmailsByCategory, setUnreadEmailsByCategory] = useState<Record<string, Record<string, Set<string>>>>({});
   const socketRef = useRef<WebSocket | null>(null);
 
   const resetAppState = useCallback(() => {
@@ -234,13 +235,24 @@ export default function DashboardPage() {
   useEffect(() => {
     fetchAccounts();
     
+    // Debounce fetchAccounts to prevent too frequent calls
+    let fetchTimeout: NodeJS.Timeout | null = null;
+    
     const handleFocus = () => {
-      fetchAccounts();
+      // Only fetch if we've been away for at least 30 seconds
+      if (fetchTimeout) clearTimeout(fetchTimeout);
+      fetchTimeout = setTimeout(() => {
+        fetchAccounts();
+      }, 30000); // 30 seconds debounce
     };
 
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
-        fetchAccounts();
+        // Only fetch if we've been away for at least 30 seconds
+        if (fetchTimeout) clearTimeout(fetchTimeout);
+        fetchTimeout = setTimeout(() => {
+          fetchAccounts();
+        }, 30000); // 30 seconds debounce
       }
     };
 
@@ -248,6 +260,7 @@ export default function DashboardPage() {
     document.addEventListener('visibilitychange', handleVisibilityChange);
     
     return () => {
+      if (fetchTimeout) clearTimeout(fetchTimeout);
       window.removeEventListener('focus', handleFocus);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
@@ -299,37 +312,61 @@ export default function DashboardPage() {
         try {
           console.log('[WebSocket] Received message:', evt.data);
           const msg: Incoming = JSON.parse(evt.data);
-          setByAccount((prev) => ({ ...prev, [msg.account]: [msg, ...(prev[msg.account] || [])] }));
           
-          // Show notification for new email
+          // Ensure account email is valid
+          const accountEmail = msg.account || '';
+          if (!accountEmail) {
+            console.warn('[WebSocket] Received message without account email:', msg);
+            return;
+          }
+          
+          // Add email to state, ensuring we don't duplicate
+          setByAccount((prev) => {
+            const existing = prev[accountEmail] || [];
+            // Check if email already exists to avoid duplicates
+            const exists = existing.some(e => e.id === msg.id);
+            if (exists) {
+              console.log('[WebSocket] Email already exists, skipping:', msg.id);
+              return prev;
+            }
+            return { ...prev, [accountEmail]: [msg, ...existing] };
+          });
+          
+          // Show notification for new email with account information
           if (msg.category && msg.category !== 'none') {
             const categoryName = msg.category;
-            addToast(`New email received in the category ${categoryName}`);
+            addToast(`New email in ${categoryName} for ${accountEmail}`);
             
-            // Mark email as unread
+            // Mark email as unread - organized by account and category
             setUnreadEmailsByCategory((prev) => {
               const newState = { ...prev };
-              if (!newState[categoryName]) {
-                newState[categoryName] = new Set();
+              if (!newState[accountEmail]) {
+                newState[accountEmail] = {};
               }
-              newState[categoryName].add(msg.id);
+              if (!newState[accountEmail][categoryName]) {
+                newState[accountEmail][categoryName] = new Set();
+              }
+              newState[accountEmail][categoryName].add(msg.id);
               return newState;
             });
           } else {
-            addToast("New email received (uncategorized)");
+            addToast(`New email (uncategorized) for ${accountEmail}`);
             
-            // Mark uncategorized email as unread (use "Uncategorized" as the key)
+            // Mark uncategorized email as unread - organized by account
             setUnreadEmailsByCategory((prev) => {
               const newState = { ...prev };
-              if (!newState["Uncategorized"]) {
-                newState["Uncategorized"] = new Set();
+              if (!newState[accountEmail]) {
+                newState[accountEmail] = {};
               }
-              newState["Uncategorized"].add(msg.id);
+              if (!newState[accountEmail]["Uncategorized"]) {
+                newState[accountEmail]["Uncategorized"] = new Set();
+              }
+              newState[accountEmail]["Uncategorized"].add(msg.id);
               return newState;
             });
           }
         } catch (error) {
-          console.error('[WebSocket] Error parsing message:', error);
+          console.error('[WebSocket] Error parsing message:', error, evt.data);
         }
       };
       
@@ -665,17 +702,21 @@ export default function DashboardPage() {
           onRecategorize={handleRecategorize}
           unreadEmailsByCategory={unreadEmailsByCategory}
           accounts={accounts}
-          onCategoryOpened={(categoryName, emailIds) => {
-            // Mark emails as read when category is opened
+          onCategoryOpened={(accountEmail, categoryName, emailIds) => {
+            // Mark emails as read when category is opened - organized by account
             setUnreadEmailsByCategory((prev) => {
               const newState = { ...prev };
-              if (newState[categoryName]) {
-                const newSet = new Set(newState[categoryName]);
+              if (newState[accountEmail] && newState[accountEmail][categoryName]) {
+                const newSet = new Set(newState[accountEmail][categoryName]);
                 emailIds.forEach(id => newSet.delete(id));
                 if (newSet.size === 0) {
-                  delete newState[categoryName];
+                  delete newState[accountEmail][categoryName];
+                  // Clean up empty account entry
+                  if (Object.keys(newState[accountEmail]).length === 0) {
+                    delete newState[accountEmail];
+                  }
                 } else {
-                  newState[categoryName] = newSet;
+                  newState[accountEmail][categoryName] = newSet;
                 }
               }
               return newState;
