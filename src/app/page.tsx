@@ -106,7 +106,7 @@ export default function DashboardPage() {
             credentials: "include",          
             headers: {
               "Content-Type": "application/json",
-              "X-CSRFToken": csrftoken,     
+              ...(csrftoken && { "X-CSRFToken": csrftoken }),
             },
           },
           handleUnauthorized
@@ -125,7 +125,7 @@ export default function DashboardPage() {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            "X-CSRFToken": csrftoken,
+            ...(csrftoken && { "X-CSRFToken": csrftoken }),
           },
           body: JSON.stringify(newCategory),
         },
@@ -149,7 +149,7 @@ export default function DashboardPage() {
           method: "DELETE",
           headers: {
             "Content-Type": "application/json",
-            "X-CSRFToken": csrftoken,
+            ...(csrftoken && { "X-CSRFToken": csrftoken }),
           },
         },
         handleUnauthorized
@@ -174,7 +174,7 @@ export default function DashboardPage() {
           method: "PUT",
           headers: {
             "Content-Type": "application/json",
-            "X-CSRFToken": csrftoken,
+            ...(csrftoken && { "X-CSRFToken": csrftoken }),
           },
           body: JSON.stringify(updatedData),
         },
@@ -207,7 +207,10 @@ export default function DashboardPage() {
         `${backendUrl}/api/auth/success/`,
         {
           credentials: "include",
-          headers: { "Content-Type": "application/json", "X-CSRFToken": csrftoken },
+          headers: { 
+            "Content-Type": "application/json", 
+            ...(csrftoken && { "X-CSRFToken": csrftoken }),
+          },
         },
         handleUnauthorized
       );
@@ -370,7 +373,7 @@ export default function DashboardPage() {
         }
       };
       
-      sock.onerror = (error) => {
+      sock.onerror = () => {
         // Only log error if we're actually trying to connect (not just a connection attempt that failed silently)
         if (socketRef.current?.readyState === WebSocket.CONNECTING || socketRef.current?.readyState === WebSocket.OPEN) {
           console.warn('[WebSocket] Connection error (this is normal if the server is not running)');
@@ -410,7 +413,7 @@ export default function DashboardPage() {
     } catch (error) {
       console.warn('[WebSocket] Failed to create WebSocket connection:', error);
     }
-  }, [accounts, loadingAccounts, isAuthenticated]);
+  }, [accounts, loadingAccounts, isAuthenticated, addToast]);
 
   useEffect(() => {
     const saved = localStorage.getItem("byAccount");
@@ -443,7 +446,11 @@ export default function DashboardPage() {
   const toggleEmailSelection = (id: string) =>
     setSelectedEmails((prev) => {
       const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
       return next;
     });
 
@@ -469,7 +476,10 @@ export default function DashboardPage() {
     const res = await secureFetch(endpoint, {
       method: "POST",
       credentials: "include",
-      headers: { "Content-Type": "application/json", "X-CSRFToken": csrftoken },
+      headers: { 
+        "Content-Type": "application/json", 
+        ...(csrftoken && { "X-CSRFToken": csrftoken }),
+      },
       body: JSON.stringify({ email_ids: Array.from(selectedEmails) }),
     }, handleUnauthorized);
 
@@ -545,7 +555,7 @@ export default function DashboardPage() {
           credentials: "include",
           headers: {
             "Content-Type": "application/json",
-            "X-CSRFToken": csrftoken,
+            ...(csrftoken && { "X-CSRFToken": csrftoken }),
           },
         },
         handleUnauthorized
@@ -579,7 +589,7 @@ export default function DashboardPage() {
         try {
           const errorData = await res.json();
           errorMessage = errorData.error || errorData.detail || `HTTP ${res.status}: ${res.statusText}`;
-        } catch (e) {
+        } catch {
           errorMessage = `HTTP ${res.status}: ${res.statusText || "Failed to recategorize email"}`;
         }
         addToast(`Error recategorizing email: ${errorMessage}`);
