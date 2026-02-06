@@ -10,6 +10,7 @@ import { backendUrl, HomeContext } from "./utils/HomeContext";
 import { secureFetch } from "./utils/secureFetch";
 import { getCookie } from "./utils/cookies";
 import { format } from "date-fns";
+import PrototypeBanner from "./components/PrototypeBanner";
 
 type ApiCategory = { id: number; name: string; description: string; synonyms?: string[] };
 export type CardCategory = { id: number; name: string; description: string; synonyms?: string[] };
@@ -654,6 +655,7 @@ export default function DashboardPage() {
   return (
     <HomeContext.Provider value={{ resetAccountState, resetAppState }}>
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+        <PrototypeBanner />
         <Sidebar />
         <main className="lg:ml-64">
           <div className="max-w-7xl mx-auto p-6">
